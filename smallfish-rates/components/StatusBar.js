@@ -7,13 +7,16 @@ export default function StatusBar({ data, loading }) {
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       margin: '16px 16px 0', padding: '8px 0', borderTop: '1px solid var(--border)',
+      flexWrap: 'wrap', gap: 8,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 9, color: 'var(--dim)' }}>
-        <span>DATA: FRED API (fred.stlouisfed.org)</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 9, color: 'var(--dim)', flexWrap: 'wrap' }}>
+        <span>FRED: <span style={{ color: data?.live ? 'var(--green)' : 'var(--red)' }}>
+          {data?.live ? '● LIVE' : '○ DEMO'}
+        </span></span>
         <span>|</span>
-        <span style={{ color: data?.live ? 'var(--green)' : 'var(--red)' }}>
-          {data?.live ? '● LIVE FEED' : '○ DEMO DATA'}
-        </span>
+        <span>SOFR FUTURES: <span style={{ color: data?.sofrLive ? 'var(--green)' : 'var(--red)' }}>
+          {data?.sofrLive ? `● YAHOO (${data?.sofrCount || 0} contracts)` : '○ FALLBACK'}
+        </span></span>
         <span>|</span>
         <span>UPDATED: {lastUpdate}</span>
         {loading && (

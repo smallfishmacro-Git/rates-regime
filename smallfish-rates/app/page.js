@@ -103,7 +103,7 @@ export default function Home() {
           }}>
             <span style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text)', letterSpacing: 2 }}>US STIR</span>
             <span style={{ color: 'var(--amber)', fontSize: 13, fontWeight: 'bold' }}>
-              EFFR {currentEFFR.toFixed(2)}
+              SOFR {(data?.rates?.SOFR || 3.63).toFixed(2)}
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 2 }}>
               {['MEETINGS', 'STRIP', 'SPREADS'].map((t) => (
@@ -122,7 +122,7 @@ export default function Home() {
 
           <div style={{ marginTop: 12 }} className="fade-in">
             {stirTab === 'MEETINGS' && <MeetingsView meetings={data?.meetings || []} dotPlot={data?.dotPlot} effr={currentEFFR} />}
-            {stirTab === 'STRIP' && <StripTable strip={data?.strip || []} />}
+            {stirTab === 'STRIP' && <StripTable strip={data?.strip || []} sofrLive={data?.sofrLive} />}
             {stirTab === 'SPREADS' && <SpreadsView rates={data?.rates || {}} />}
           </div>
         </div>

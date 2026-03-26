@@ -1,28 +1,51 @@
 import { NextResponse } from 'next/server';
 import { fetchMultipleSeries, computeInflationYoY } from '@/lib/fred';
+import { fetchAllSOFRFutures, groupByYear, computeMeetingProbsFromSOFR } from '@/lib/yahoo';
 import { FALLBACK_RATES, FALLBACK_CPI, FALLBACK_MEETINGS, FALLBACK_STRIP, DOT_PLOT } from '@/lib/constants';
 
-export const revalidate = 3600; // ISR: revalidate every hour
+export const revalidate = 3600;
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const apiKey = searchParams.get('key') || process.env.FRED_API_KEY;
 
+  // Always fetch SOFR futures from Yahoo Finance (free, no key needed)
+  let sofrContracts = [];
+  let sofrStrip = [];
+  let sofrError = null;
+
+  try {
+    sofrContracts = await fetchAllSOFRFutures();
+    if (sofrContracts.length > 0) {
+      sofrStrip = groupByYear(sofrContracts);
+    }
+  } catch (err) {
+    sofrError = err.message;
+    console.error('Yahoo SOFR fetch error:', err);
+  }
+
   if (!apiKey) {
-    // Return fallback data
+    const currentEFFR = FALLBACK_RATES.EFFR;
+    const meetings = sofrContracts.length > 0
+      ? computeMeetingProbsFromSOFR(sofrContracts, currentEFFR)
+      : FALLBACK_MEETINGS;
+
     return NextResponse.json({
       live: false,
+      sofrLive: sofrContracts.length > 0,
+      sofrCount: sofrContracts.length,
+      sofrError,
       lastUpdate: new Date().toISOString(),
       rates: FALLBACK_RATES,
-      meetings: FALLBACK_MEETINGS,
-      strip: FALLBACK_STRIP,
+      meetings,
+      strip: sofrStrip.length > 0 ? sofrStrip : FALLBACK_STRIP,
+      sofrRaw: sofrContracts,
       cpi: FALLBACK_CPI,
       dotPlot: DOT_PLOT,
     });
   }
 
   try {
-    // Fetch all rate series from FRED
     const rateSeries = [
       'EFFR', 'SOFR', 'DFEDTARU', 'DFEDTARL',
       'DGS1MO', 'DGS3MO', 'DGS6MO', 'DGS1', 'DGS2', 'DGS3',
@@ -36,36 +59,30 @@ export async function GET(request) {
       fetchMultipleSeries(['CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE'], 36, apiKey),
     ]);
 
-    // Extract latest values
     const rates = {};
     for (const [key, obs] of Object.entries(rateData)) {
       rates[key] = obs?.[0]?.value ?? FALLBACK_RATES[key] ?? null;
     }
 
-    // Compute CPI YoY
-    const cpiYoY = cpiData?.CPIAUCSL 
-      ? computeInflationYoY(cpiData.CPIAUCSL) 
+    const cpiYoY = cpiData?.CPIAUCSL
+      ? computeInflationYoY(cpiData.CPIAUCSL)
       : FALLBACK_CPI;
 
-    // Compute meeting probabilities from yield curve
-    const yieldCurve = {};
-    for (const key of rateSeries) {
-      yieldCurve[key] = rates[key];
-    }
-
-    // Compute implied path from yield curve (simplified FedWatch)
     const currentEFFR = rates.EFFR || FALLBACK_RATES.EFFR;
-    const meetings = computeMeetingProbsFromCurve(currentEFFR, yieldCurve);
-
-    // Compute strip from implied path
-    const strip = computeStripFromMeetings(currentEFFR, meetings);
+    const meetings = sofrContracts.length > 0
+      ? computeMeetingProbsFromSOFR(sofrContracts, currentEFFR)
+      : computeFallbackMeetings(currentEFFR, rates);
 
     return NextResponse.json({
       live: true,
+      sofrLive: sofrContracts.length > 0,
+      sofrCount: sofrContracts.length,
+      sofrError,
       lastUpdate: new Date().toISOString(),
       rates,
       meetings,
-      strip,
+      strip: sofrStrip.length > 0 ? sofrStrip : FALLBACK_STRIP,
+      sofrRaw: sofrContracts,
       cpi: cpiYoY.length > 0 ? cpiYoY : FALLBACK_CPI,
       coreCpi: cpiData?.CPILFESL ? computeInflationYoY(cpiData.CPILFESL) : [],
       pce: cpiData?.PCEPI ? computeInflationYoY(cpiData.PCEPI) : [],
@@ -73,22 +90,26 @@ export async function GET(request) {
       dotPlot: DOT_PLOT,
     });
   } catch (error) {
-    console.error('FRED API error:', error);
+    console.error('API error:', error);
     return NextResponse.json({
       live: false,
-      error: 'Failed to fetch FRED data',
+      sofrLive: sofrContracts.length > 0,
+      sofrCount: sofrContracts.length,
+      error: error.message,
       lastUpdate: new Date().toISOString(),
       rates: FALLBACK_RATES,
-      meetings: FALLBACK_MEETINGS,
-      strip: FALLBACK_STRIP,
+      meetings: sofrContracts.length > 0
+        ? computeMeetingProbsFromSOFR(sofrContracts, FALLBACK_RATES.EFFR)
+        : FALLBACK_MEETINGS,
+      strip: sofrStrip.length > 0 ? sofrStrip : FALLBACK_STRIP,
+      sofrRaw: sofrContracts,
       cpi: FALLBACK_CPI,
       dotPlot: DOT_PLOT,
     });
   }
 }
 
-function computeMeetingProbsFromCurve(currentEFFR, curve) {
-  const now = new Date();
+function computeFallbackMeetings(effr, curve) {
   const meetings = [
     { label: 'Apr 29', date: '2026-04-29', contract: 'FFJ6' },
     { label: 'Jun 10', date: '2026-06-10', contract: 'FFM6' },
@@ -101,102 +122,12 @@ function computeMeetingProbsFromCurve(currentEFFR, curve) {
     { label: 'Apr 28', date: '2027-04-28', contract: 'FFJ7' },
     { label: 'Jun 09', date: '2027-06-09', contract: 'FFM7' },
   ];
-
-  // Use front-end of yield curve to imply rate path
-  const shortRates = {
-    1: curve.DGS1MO || 3.58,
-    3: curve.DGS3MO || 3.55,
-    6: curve.DGS6MO || 3.48,
-    12: curve.DGS1 || 3.42,
-    24: curve.DGS2 || 3.68,
-  };
-
-  return meetings.map((m) => {
-    const mDate = new Date(m.date);
-    const monthsOut = (mDate.getFullYear() - now.getFullYear()) * 12 + (mDate.getMonth() - now.getMonth());
-
-    // Interpolate implied rate
-    let impliedRate;
-    if (monthsOut <= 1) impliedRate = shortRates[1];
-    else if (monthsOut <= 3) impliedRate = shortRates[1] + (shortRates[3] - shortRates[1]) * ((monthsOut - 1) / 2);
-    else if (monthsOut <= 6) impliedRate = shortRates[3] + (shortRates[6] - shortRates[3]) * ((monthsOut - 3) / 3);
-    else if (monthsOut <= 12) impliedRate = shortRates[6] + (shortRates[12] - shortRates[6]) * ((monthsOut - 6) / 6);
-    else impliedRate = shortRates[12] + (shortRates[24] - shortRates[12]) * ((monthsOut - 12) / 12);
-
-    const diff = (currentEFFR - impliedRate) / 0.25;
-    const cutsImplied = Math.max(0, diff);
-
-    let hold, cut25, cut50;
-    if (cutsImplied <= 0) { hold = 100; cut25 = 0; cut50 = 0; }
-    else if (cutsImplied < 1) { hold = Math.round((1 - cutsImplied) * 100); cut25 = 100 - hold; cut50 = 0; }
-    else if (cutsImplied < 2) { hold = 0; cut25 = Math.round((2 - cutsImplied) * 100); cut50 = 100 - cut25; }
-    else { hold = 0; cut25 = 0; cut50 = 100; }
-
-    return {
-      meeting: m.label,
-      date: m.date,
-      contract: m.contract,
-      impliedRate: parseFloat(impliedRate.toFixed(3)),
-      hold, cut25, cut50,
-      hike25: 0,
-      cumCuts: cutsImplied.toFixed(1),
-    };
+  const now = new Date();
+  const sr = { 1: curve.DGS1MO||3.58, 3: curve.DGS3MO||3.55, 6: curve.DGS6MO||3.48, 12: curve.DGS1||3.42, 24: curve.DGS2||3.68 };
+  return meetings.map(m => {
+    const mo = (new Date(m.date).getFullYear()-now.getFullYear())*12+(new Date(m.date).getMonth()-now.getMonth());
+    let r; if(mo<=1)r=sr[1];else if(mo<=3)r=sr[1]+(sr[3]-sr[1])*((mo-1)/2);else if(mo<=6)r=sr[3]+(sr[6]-sr[3])*((mo-3)/3);else if(mo<=12)r=sr[6]+(sr[12]-sr[6])*((mo-6)/6);else r=sr[12]+(sr[24]-sr[12])*((mo-12)/12);
+    const d=(effr-r)/0.25,c=Math.max(0,d);let h,c25,c50;if(c<=0){h=100;c25=0;c50=0}else if(c<1){h=Math.round((1-c)*100);c25=100-h;c50=0}else if(c<2){h=0;c25=Math.round((2-c)*100);c50=100-c25}else{h=0;c25=0;c50=100}
+    return{meeting:m.label,date:m.date,contract:m.contract,impliedRate:parseFloat(r.toFixed(3)),hold:h,cut25:c25,cut50:c50,hike25:0,cumCuts:c.toFixed(1)};
   });
-}
-
-function computeStripFromMeetings(currentEFFR, meetings) {
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const contracts2026 = [];
-  const contracts2027 = [];
-  const tickers = ['F', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'U', 'V', 'X', 'Z'];
-
-  // Generate monthly contracts for remaining 2026 and into 2027
-  for (let m = 3; m < 12; m++) { // Apr-Dec 2026
-    const impRate = interpolateFromMeetings(meetings, 2026, m);
-    const lastPx = 100 - impRate;
-    contracts2026.push({
-      ticker: `FF${tickers[m]}6`,
-      month: `${monthNames[m]}26`,
-      lastPx: parseFloat(lastPx.toFixed(3)),
-      impRate: parseFloat(impRate.toFixed(3)),
-      chgOCR: parseFloat((impRate - currentEFFR).toFixed(3)),
-    });
-  }
-
-  for (let m = 0; m < 6; m++) { // Jan-Jun 2027
-    const impRate = interpolateFromMeetings(meetings, 2027, m);
-    const lastPx = 100 - impRate;
-    contracts2027.push({
-      ticker: `FF${tickers[m]}7`,
-      month: `${monthNames[m]}27`,
-      lastPx: parseFloat(lastPx.toFixed(3)),
-      impRate: parseFloat(impRate.toFixed(3)),
-      chgOCR: parseFloat((impRate - currentEFFR).toFixed(3)),
-    });
-  }
-
-  return [
-    { year: 2026, contracts: contracts2026 },
-    { year: 2027, contracts: contracts2027 },
-  ];
-}
-
-function interpolateFromMeetings(meetings, year, month) {
-  const target = new Date(year, month, 15);
-  let prev = null, next = null;
-
-  for (const m of meetings) {
-    const d = new Date(m.date);
-    if (d <= target) prev = m;
-    if (d > target && !next) next = m;
-  }
-
-  if (!prev && next) return next.impliedRate;
-  if (prev && !next) return prev.impliedRate;
-  if (!prev && !next) return 3.58;
-
-  const prevDate = new Date(prev.date);
-  const nextDate = new Date(next.date);
-  const ratio = (target - prevDate) / (nextDate - prevDate);
-  return prev.impliedRate + ratio * (next.impliedRate - prev.impliedRate);
 }
