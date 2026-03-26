@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fetch SOFR futures data from Yahoo Finance and save to data/sofr.json
+Fetch SOFR futures data from Yahoo Finance and save to smallfish-rates/public/data/sofr.json
 Run daily via GitHub Actions.
 """
 
@@ -11,25 +11,20 @@ import time
 import os
 from datetime import datetime, timedelta
 
-# SOFR quarterly contracts
 CODES = {'H': ('Mar', 3), 'M': ('Jun', 6), 'U': ('Sep', 9), 'Z': ('Dec', 12)}
 
 def generate_tickers():
-    """Generate SOFR futures tickers to fetch."""
     now = datetime.now()
     contracts = []
     for year in range(now.year, now.year + 5):
         for code, (name, month) in CODES.items():
-            # Skip expired
             if year == now.year and month < now.month - 1:
                 continue
             yy = str(year)[2:]
-            # IMM settlement: 3rd Wednesday of contract month
             d = datetime(year, month, 1)
-            while d.weekday() != 2:  # Wednesday
+            while d.weekday() != 2:
                 d += timedelta(days=1)
             d += timedelta(days=14)
-
             contracts.append({
                 'yahoo': f'SR3{code}{yy}.CME',
                 'ticker': f'SFR{code}{year % 10}',
@@ -47,16 +42,13 @@ def generate_tickers():
 
 
 def get_yahoo_crumb():
-    """Get Yahoo Finance crumb + cookies for authenticated requests."""
     try:
-        # Step 1: Get cookies
         req = urllib.request.Request('https://fc.yahoo.com', headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
         })
         try:
             resp = urllib.request.urlopen(req, timeout=10)
         except urllib.error.HTTPError as e:
-            # fc.yahoo.com often returns 404 but still sets cookies
             resp = e
 
         cookies = ''
@@ -64,7 +56,6 @@ def get_yahoo_crumb():
             cookie = header.split(';')[0]
             cookies += ('; ' if cookies else '') + cookie
 
-        # Step 2: Get crumb
         req2 = urllib.request.Request('https://query2.finance.yahoo.com/v1/test/getcrumb', headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'Cookie': cookies,
@@ -81,7 +72,6 @@ def get_yahoo_crumb():
 
 
 def fetch_chart(ticker, period_days, crumb=None, cookies=None):
-    """Fetch chart data from Yahoo Finance."""
     now = int(time.time())
     period1 = now - period_days * 86400
 
@@ -110,13 +100,12 @@ def fetch_chart(ticker, period_days, crumb=None, cookies=None):
         for i, ts in enumerate(timestamps):
             c = closes[i] if i < len(closes) else None
             v = volumes[i] if i < len(volumes) else 0
-            if c is not None and not (isinstance(c, float) and c != c):  # not NaN
+            if c is not None and not (isinstance(c, float) and c != c):
                 prices.append({
                     'date': datetime.fromtimestamp(ts).strftime('%Y-%m-%d'),
                     'close': round(c, 4),
                     'volume': v or 0,
                 })
-
         return prices
     except Exception as e:
         print(f'[Fetch] {ticker} failed: {e}')
@@ -124,13 +113,11 @@ def fetch_chart(ticker, period_days, crumb=None, cookies=None):
 
 
 def compute_changes(prices):
-    """Compute 1D, 5D, 1M basis point changes."""
     n = len(prices)
     if n == 0:
         return {}
 
     latest = prices[-1]
-
     def get_prev(days_back):
         idx = n - 1 - days_back
         return prices[idx]['close'] if idx >= 0 else None
@@ -138,7 +125,6 @@ def compute_changes(prices):
     def bp_change(current, previous):
         if previous is None:
             return None
-        # Rate = 100 - Price, so rate change = -(price change) * 100
         return round(-(current - previous) * 100, 1)
 
     prev_1d = get_prev(1)
@@ -158,15 +144,12 @@ def compute_changes(prices):
 def main():
     print(f'[SOFR] Starting fetch at {datetime.now().isoformat()}')
 
-    # Authenticate
     crumb, cookies = get_yahoo_crumb()
-
     contracts = generate_tickers()
     print(f'[SOFR] Fetching {len(contracts)} contracts...')
 
     results = []
     for i, contract in enumerate(contracts):
-        # First 4 contracts: 1 year history for charts, rest: 2 months
         days = 380 if i < 4 else 50
         prices = fetch_chart(contract['yahoo'], days, crumb, cookies)
 
@@ -194,14 +177,11 @@ def main():
             'lastDate': changes['lastDate'],
         }
 
-        # Include full history for first 4 contracts (for popup charts)
         if i < 4:
             entry['history1y'] = prices
 
         results.append(entry)
         print(f'  ✓ {contract["ticker"]:8s} px={changes["lastPx"]:.3f}  rate={imp_rate:.3f}%  1d={changes["bp1d"]}  5d={changes["bp5d"]}  1m={changes["bp1m"]}  vol={changes["volume"]}')
-
-        # Small delay to be polite
         time.sleep(0.3)
 
     # Group by year
@@ -224,12 +204,14 @@ def main():
         'timestamp': datetime.now().isoformat(),
     }
 
-    # Save to public/data/sofr.json (served statically by Vercel)
-    os.makedirs('smallfish-rates/public/data', exist_ok=True)
-    with open('smallfish-rates/public/data/sofr.json', 'w') as f:
+    # === CORRECT PATH: write into smallfish-rates/public/data/ ===
+    out_path = os.path.join('smallfish-rates', 'public', 'data')
+    os.makedirs(out_path, exist_ok=True)
+    filepath = os.path.join(out_path, 'sofr.json')
+    with open(filepath, 'w') as f:
         json.dump(output, f, indent=2)
 
-    print(f'\n[SOFR] Done — {len(results)}/{len(contracts)} contracts saved to public/data/sofr.json')
+    print(f'\n[SOFR] Done — {len(results)}/{len(contracts)} contracts saved to {filepath}')
 
 
 if __name__ == '__main__':
