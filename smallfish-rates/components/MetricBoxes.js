@@ -1,6 +1,6 @@
 'use client';
 
-export default function MetricBoxes({ effr, terminal, meetings }) {
+export default function MetricBoxes({ effr, terminal, terminalContract, meetings }) {
   const ffrToTerm = ((terminal - effr) * 100).toFixed(1);
   const m6 = meetings[3]?.impliedRate;
   const m12 = meetings[meetings.length - 1]?.impliedRate;
@@ -24,7 +24,7 @@ export default function MetricBoxes({ effr, terminal, meetings }) {
         <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERMINAL</div>
         <div style={{ fontSize: 18, fontWeight: 'bold', color: 'var(--green)' }}>{terminal.toFixed(3)}%</div>
         <div style={{ fontSize: 9, color: 'var(--dim)', marginTop: 1 }}>
-          {meetings[meetings.length - 1]?.contract || 'FFM7'} M+{meetings.length || 10}
+          {terminalContract || meetings[meetings.length - 1]?.contract || 'FFM7'} M+{meetings.length || 10}
         </div>
       </div>
       <div className="metric-box">

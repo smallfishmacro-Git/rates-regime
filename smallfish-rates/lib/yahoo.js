@@ -1,127 +1,182 @@
 // Yahoo Finance SOFR Futures scraper
-// Fetches real CME SOFR futures quotes with historical price changes
+// Multiple fetch strategies for reliability from Vercel serverless
 
-// SOFR futures contract specs (quarterly, CME)
-// Yahoo ticker format: SR3{MonthCode}{YY}.CME
-// Month codes: H=Mar, M=Jun, U=Sep, Z=Dec
 const MONTH_CODES = { H: 'Mar', M: 'Jun', U: 'Sep', Z: 'Dec' };
+const CODE_MONTHS = { H: 3, M: 6, U: 9, Z: 12 };
 
 /**
- * Generate list of SOFR futures tickers to fetch
- * Returns contracts from current quarter out ~3 years
+ * Generate SOFR futures tickers to fetch (quarterly contracts)
  */
 export function generateSOFRTickers() {
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1; // 1-12
-
+  const currentMonth = now.getMonth() + 1;
   const contracts = [];
-  const codes = ['H', 'M', 'U', 'Z']; // Mar, Jun, Sep, Dec
-  const codeMonths = { H: 3, M: 6, U: 9, Z: 12 };
+  const codes = ['H', 'M', 'U', 'Z'];
 
   for (let year = currentYear; year <= currentYear + 4; year++) {
     for (const code of codes) {
-      const contractMonth = codeMonths[code];
-      const contractDate = new Date(year, contractMonth - 1, 1);
-
-      // Skip expired contracts (before current month)
-      if (contractDate < new Date(currentYear, currentMonth - 2, 1)) continue;
+      const contractMonth = CODE_MONTHS[code];
+      if (year === currentYear && contractMonth < currentMonth - 1) continue;
 
       const yy = String(year).slice(2);
-      const ticker = `SR3${code}${yy}.CME`;
-      const label = `${MONTH_CODES[code]}${yy}`;
-      const tradingViewTicker = `SFR${code}${year % 10}`;
-
       contracts.push({
-        ticker,
-        label,
-        tvTicker: tradingViewTicker,
+        ticker: `SR3${code}${yy}.CME`,
+        label: `${MONTH_CODES[code]}${yy}`,
+        tvTicker: `SFR${code}${year % 10}`,
         year,
         month: contractMonth,
         monthCode: code,
-        settlementDate: getSettlementDate(year, contractMonth),
+        settlementDate: getIMM(year, contractMonth),
       });
 
-      // Stop after ~20 contracts
       if (contracts.length >= 20) break;
     }
     if (contracts.length >= 20) break;
   }
-
   return contracts;
 }
 
-/**
- * Get IMM settlement date (3rd Wednesday of contract month)
- */
-function getSettlementDate(year, month) {
+function getIMM(year, month) {
   const d = new Date(year, month - 1, 1);
-  // Find first Wednesday
   while (d.getDay() !== 3) d.setDate(d.getDate() + 1);
-  // 3rd Wednesday = first + 14 days
   d.setDate(d.getDate() + 14);
   return d.toISOString().slice(0, 10);
 }
 
 /**
- * Fetch a single SOFR futures contract from Yahoo Finance
- * Returns current price + historical data for computing changes
+ * Fetch chart data from Yahoo Finance with multiple URL strategies
  */
-async function fetchYahooChart(ticker, range = '2mo', interval = '1d') {
+async function fetchYahooChart(ticker) {
+  const urls = [
+    `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=2mo&interval=1d&includePrePost=false`,
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=2mo&interval=1d&includePrePost=false`,
+  ];
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!res.ok) continue;
+      const data = await res.json();
+      const result = data?.chart?.result?.[0];
+      if (!result?.timestamp?.length) continue;
+
+      const timestamps = result.timestamp;
+      const closes = result.indicators?.quote?.[0]?.close || [];
+      const volumes = result.indicators?.quote?.[0]?.volume || [];
+
+      // Build price array, filter nulls
+      const prices = [];
+      for (let i = 0; i < timestamps.length; i++) {
+        if (closes[i] != null) {
+          prices.push({
+            date: new Date(timestamps[i] * 1000).toISOString().slice(0, 10),
+            close: closes[i],
+            volume: volumes[i] || 0,
+          });
+        }
+      }
+
+      if (prices.length === 0) continue;
+
+      const latest = prices[prices.length - 1];
+      const n = prices.length;
+
+      // Find price N trading days ago
+      const get = (daysBack) => {
+        const idx = n - 1 - daysBack;
+        return idx >= 0 ? prices[idx].close : null;
+      };
+
+      const prev1d = get(1);
+      const prev5d = get(5);
+      // For 1M, look back ~22 trading days, or use earliest available
+      const prev1m = get(22) || get(Math.min(21, n - 1));
+
+      return {
+        lastPx: latest.close,
+        lastDate: latest.date,
+        volume: latest.volume,
+        // Price changes (in price terms)
+        px1d: prev1d != null ? parseFloat((latest.close - prev1d).toFixed(4)) : null,
+        px5d: prev5d != null ? parseFloat((latest.close - prev5d).toFixed(4)) : null,
+        px1m: prev1m != null ? parseFloat((latest.close - prev1m).toFixed(4)) : null,
+        // Rate changes in basis points (rate = 100 - price, so rate change = -price change * 100)
+        bp1d: prev1d != null ? parseFloat((-(latest.close - prev1d) * 100).toFixed(1)) : null,
+        bp5d: prev5d != null ? parseFloat((-(latest.close - prev5d) * 100).toFixed(1)) : null,
+        bp1m: prev1m != null ? parseFloat((-(latest.close - prev1m) * 100).toFixed(1)) : null,
+      };
+    } catch (err) {
+      console.error(`Yahoo fetch attempt failed for ${ticker}:`, err.message);
+      continue;
+    }
+  }
+
+  // If Yahoo API fails, try the download CSV endpoint
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}`;
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-      next: { revalidate: 3600 }, // cache 1 hour
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-
-    const result = data?.chart?.result?.[0];
-    if (!result) return null;
-
-    const timestamps = result.timestamp || [];
-    const closes = result.indicators?.quote?.[0]?.close || [];
-    const volumes = result.indicators?.quote?.[0]?.volume || [];
-    const meta = result.meta || {};
-
-    // Build daily price array (most recent last)
-    const prices = timestamps.map((ts, i) => ({
-      date: new Date(ts * 1000).toISOString().slice(0, 10),
-      close: closes[i],
-      volume: volumes[i],
-    })).filter(p => p.close != null);
-
-    if (prices.length === 0) return null;
-
-    const latest = prices[prices.length - 1];
-    const prev1d = prices.length > 1 ? prices[prices.length - 2] : null;
-    const prev5d = prices.length > 5 ? prices[prices.length - 6] : null;
-    const prev1m = prices.length > 21 ? prices[prices.length - 22] : (prices[0] || null);
-
-    return {
-      lastPx: latest.close,
-      lastDate: latest.date,
-      volume: latest.volume || 0,
-      prevClose: meta.chartPreviousClose || prev1d?.close,
-      // Price changes
-      px1d: prev1d ? latest.close - prev1d.close : 0,
-      px5d: prev5d ? latest.close - prev5d.close : 0,
-      px1m: prev1m ? latest.close - prev1m.close : 0,
-      // Basis point changes (implied rate = 100 - price, so rate change = -price change)
-      bp1d: prev1d ? -(latest.close - prev1d.close) * 100 : 0,
-      bp5d: prev5d ? -(latest.close - prev5d.close) * 100 : 0,
-      bp1m: prev1m ? -(latest.close - prev1m.close) * 100 : 0,
-      // Open interest from meta if available
-      openInterest: meta.openInterest || 0,
-    };
-  } catch (err) {
-    console.error(`Yahoo fetch error for ${ticker}:`, err.message);
+    return await fetchYahooCSV(ticker);
+  } catch {
     return null;
   }
+}
+
+/**
+ * Fallback: fetch from Yahoo download CSV endpoint
+ */
+async function fetchYahooCSV(ticker) {
+  const now = Math.floor(Date.now() / 1000);
+  const twoMonthsAgo = now - 60 * 86400;
+  const url = `https://query1.finance.yahoo.com/v7/finance/download/${encodeURIComponent(ticker)}?period1=${twoMonthsAgo}&period2=${now}&interval=1d&events=history`;
+
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    },
+  });
+
+  if (!res.ok) return null;
+  const text = await res.text();
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return null;
+
+  // Parse CSV: Date,Open,High,Low,Close,Adj Close,Volume
+  const prices = [];
+  for (let i = 1; i < lines.length; i++) {
+    const parts = lines[i].split(',');
+    const close = parseFloat(parts[4]);
+    const volume = parseInt(parts[6]) || 0;
+    if (!isNaN(close)) {
+      prices.push({ date: parts[0], close, volume });
+    }
+  }
+
+  if (prices.length === 0) return null;
+
+  const latest = prices[prices.length - 1];
+  const n = prices.length;
+  const get = (d) => n - 1 - d >= 0 ? prices[n - 1 - d].close : null;
+
+  const prev1d = get(1);
+  const prev5d = get(5);
+  const prev1m = get(22) || get(Math.min(21, n - 1));
+
+  return {
+    lastPx: latest.close,
+    lastDate: latest.date,
+    volume: latest.volume,
+    px1d: prev1d != null ? parseFloat((latest.close - prev1d).toFixed(4)) : null,
+    px5d: prev5d != null ? parseFloat((latest.close - prev5d).toFixed(4)) : null,
+    px1m: prev1m != null ? parseFloat((latest.close - prev1m).toFixed(4)) : null,
+    bp1d: prev1d != null ? parseFloat((-(latest.close - prev1d) * 100).toFixed(1)) : null,
+    bp5d: prev5d != null ? parseFloat((-(latest.close - prev5d) * 100).toFixed(1)) : null,
+    bp1m: prev1m != null ? parseFloat((-(latest.close - prev1m) * 100).toFixed(1)) : null,
+  };
 }
 
 /**
@@ -135,8 +190,6 @@ export async function fetchAllSOFRFutures() {
       const data = await fetchYahooChart(contract.ticker);
       if (!data) return null;
 
-      const impRate = parseFloat((100 - data.lastPx).toFixed(4));
-
       return {
         ticker: contract.tvTicker,
         yahooTicker: contract.ticker,
@@ -145,14 +198,11 @@ export async function fetchAllSOFRFutures() {
         monthCode: contract.monthCode,
         settlementDate: contract.settlementDate,
         lastPx: data.lastPx,
-        impRate,
+        impRate: parseFloat((100 - data.lastPx).toFixed(4)),
         volume: data.volume,
-        openInterest: data.openInterest,
-        // Price changes (in price terms, + = price up = rate down)
         px1d: data.px1d,
         px5d: data.px5d,
         px1m: data.px1m,
-        // Rate changes in basis points (+ = rate up)
         bp1d: data.bp1d,
         bp5d: data.bp5d,
         bp1m: data.bp1m,
@@ -161,15 +211,13 @@ export async function fetchAllSOFRFutures() {
     })
   );
 
-  const valid = results
+  return results
     .filter(r => r.status === 'fulfilled' && r.value)
     .map(r => r.value);
-
-  return valid;
 }
 
 /**
- * Group contracts by year for strip display
+ * Group contracts by year
  */
 export function groupByYear(contracts) {
   const groups = {};
@@ -181,16 +229,12 @@ export function groupByYear(contracts) {
     .sort(([a], [b]) => a - b)
     .map(([year, contracts]) => ({
       year: parseInt(year),
-      contracts: contracts.sort((a, b) => {
-        const order = { H: 0, M: 1, U: 2, Z: 3 };
-        return order[a.monthCode] - order[b.monthCode];
-      }),
+      contracts: contracts.sort((a, b) => CODE_MONTHS[a.monthCode] - CODE_MONTHS[b.monthCode]),
     }));
 }
 
 /**
  * Compute meeting probabilities from SOFR futures
- * Uses the actual futures-implied rates to determine cut/hold probabilities
  */
 export function computeMeetingProbsFromSOFR(sofrContracts, currentEFFR) {
   const meetings = [
@@ -206,17 +250,13 @@ export function computeMeetingProbsFromSOFR(sofrContracts, currentEFFR) {
     { label: 'Jun 09', date: '2027-06-09', contract: 'FFM7' },
   ];
 
-  // Sort SOFR contracts by settlement date
   const sorted = [...sofrContracts].sort(
     (a, b) => new Date(a.settlementDate) - new Date(b.settlementDate)
   );
-
   if (sorted.length === 0) return [];
 
   return meetings.map((m) => {
     const mDate = new Date(m.date);
-
-    // Find the two SOFR contracts bracketing this meeting date
     let before = null, after = null;
     for (const c of sorted) {
       const sDate = new Date(c.settlementDate);
@@ -224,12 +264,9 @@ export function computeMeetingProbsFromSOFR(sofrContracts, currentEFFR) {
       if (sDate > mDate && !after) after = c;
     }
 
-    // Interpolate implied rate at meeting date
     let impliedRate;
     if (before && after) {
-      const bDate = new Date(before.settlementDate);
-      const aDate = new Date(after.settlementDate);
-      const ratio = (mDate - bDate) / (aDate - bDate);
+      const ratio = (mDate - new Date(before.settlementDate)) / (new Date(after.settlementDate) - new Date(before.settlementDate));
       impliedRate = before.impRate + ratio * (after.impRate - before.impRate);
     } else if (before) {
       impliedRate = before.impRate;
@@ -241,33 +278,19 @@ export function computeMeetingProbsFromSOFR(sofrContracts, currentEFFR) {
 
     // SOFR trades ~5bp below EFFR, adjust
     const adjustedRate = impliedRate + 0.05;
-
-    // Compute probabilities (CME FedWatch binary tree methodology)
     const diff = (currentEFFR - adjustedRate) / 0.25;
     const cutsImplied = Math.max(0, diff);
 
     let hold, cut25, cut50;
-    if (cutsImplied <= 0) {
-      hold = 100; cut25 = 0; cut50 = 0;
-    } else if (cutsImplied < 1) {
-      hold = Math.round((1 - cutsImplied) * 100);
-      cut25 = 100 - hold;
-      cut50 = 0;
-    } else if (cutsImplied < 2) {
-      hold = 0;
-      cut25 = Math.round((2 - cutsImplied) * 100);
-      cut50 = 100 - cut25;
-    } else {
-      hold = 0; cut25 = 0; cut50 = 100;
-    }
+    if (cutsImplied <= 0) { hold = 100; cut25 = 0; cut50 = 0; }
+    else if (cutsImplied < 1) { hold = Math.round((1 - cutsImplied) * 100); cut25 = 100 - hold; cut50 = 0; }
+    else if (cutsImplied < 2) { hold = 0; cut25 = Math.round((2 - cutsImplied) * 100); cut50 = 100 - cut25; }
+    else { hold = 0; cut25 = 0; cut50 = 100; }
 
     return {
-      meeting: m.label,
-      date: m.date,
-      contract: m.contract,
+      meeting: m.label, date: m.date, contract: m.contract,
       impliedRate: parseFloat(impliedRate.toFixed(3)),
-      hold, cut25, cut50,
-      hike25: 0,
+      hold, cut25, cut50, hike25: 0,
       cumCuts: cutsImplied.toFixed(1),
     };
   });

@@ -13,6 +13,7 @@ export default function Home() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stirTab, setStirTab] = useState('MEETINGS');
+  const [stripProduct, setStripProduct] = useState('SOFR');
   const [fredKey, setFredKey] = useState('');
   const [inputKey, setInputKey] = useState('');
 
@@ -50,7 +51,9 @@ export default function Home() {
   };
 
   const currentEFFR = data?.rates?.EFFR || 3.58;
-  const terminalRate = data?.meetings?.[data.meetings.length - 1]?.impliedRate || 3.27;
+  const currentSOFR = data?.rates?.SOFR || 3.63;
+  const terminalRate = data?.terminal?.rate || data?.meetings?.[data.meetings.length - 1]?.impliedRate || 3.27;
+  const terminalContract = data?.terminal?.contract || 'FFM7';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
@@ -103,7 +106,7 @@ export default function Home() {
           }}>
             <span style={{ fontSize: 14, fontWeight: 'bold', color: 'var(--text)', letterSpacing: 2 }}>US STIR</span>
             <span style={{ color: 'var(--amber)', fontSize: 13, fontWeight: 'bold' }}>
-              SOFR {(data?.rates?.SOFR || 3.63).toFixed(2)}
+              SOFR {currentSOFR.toFixed(2)}
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 2 }}>
               {['MEETINGS', 'STRIP', 'SPREADS'].map((t) => (
@@ -117,12 +120,19 @@ export default function Home() {
           <MetricBoxes
             effr={currentEFFR}
             terminal={terminalRate}
+            terminalContract={terminalContract}
             meetings={data?.meetings || []}
           />
 
           <div style={{ marginTop: 12 }} className="fade-in">
             {stirTab === 'MEETINGS' && <MeetingsView meetings={data?.meetings || []} dotPlot={data?.dotPlot} effr={currentEFFR} />}
-            {stirTab === 'STRIP' && <StripTable strip={data?.strip || []} sofrLive={data?.sofrLive} />}
+            {stirTab === 'STRIP' && <StripTable
+              strip={data?.strip || []}
+              sofrStrip={data?.sofrStrip || []}
+              ffStrip={data?.ffStrip || []}
+              product={stripProduct}
+              onProductChange={setStripProduct}
+            />}
             {stirTab === 'SPREADS' && <SpreadsView rates={data?.rates || {}} />}
           </div>
         </div>
