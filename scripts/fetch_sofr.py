@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fetch SOFR futures using yfinance (handles Yahoo auth automatically).
-Saves to smallfish-rates/public/data/sofr.json
+Fetch SOFR futures and build daily history for 1D/5D/1M changes + long-term charts.
+Stores 2 years of daily snapshots (~520 trading days).
 """
 
 import json
@@ -10,6 +10,10 @@ from datetime import datetime, timedelta
 import yfinance as yf
 
 CODES = {'H': ('Mar', 3), 'M': ('Jun', 6), 'U': ('Sep', 9), 'Z': ('Dec', 12)}
+DATA_DIR = os.path.join('smallfish-rates', 'public', 'data')
+HISTORY_FILE = os.path.join(DATA_DIR, 'sofr_history.json')
+OUTPUT_FILE = os.path.join(DATA_DIR, 'sofr.json')
+MAX_HISTORY_DAYS = 520  # ~2 years of trading days
 
 
 def generate_tickers():
@@ -40,95 +44,129 @@ def generate_tickers():
     return contracts
 
 
-def fetch_history(ticker_str, period='2mo'):
-    """Fetch history using yfinance."""
-    try:
-        t = yf.Ticker(ticker_str)
-        df = t.history(period=period, interval='1d')
-        if df.empty:
-            return None
-        prices = []
-        for date, row in df.iterrows():
-            close = row.get('Close')
-            vol = row.get('Volume', 0)
-            if close is not None and close > 0:
-                prices.append({
-                    'date': date.strftime('%Y-%m-%d'),
-                    'close': round(float(close), 4),
-                    'volume': int(vol) if vol else 0,
-                })
-        return prices
-    except Exception as e:
-        print(f'  [yfinance] {ticker_str}: {e}')
+def fetch_today(tickers):
+    snapshot = {}
+    for t in tickers:
+        try:
+            tk = yf.Ticker(t['yahoo'])
+            df = tk.history(period='1d', interval='1d')
+            if not df.empty:
+                row = df.iloc[-1]
+                snapshot[t['ticker']] = {
+                    'lastPx': round(float(row['Close']), 4),
+                    'volume': int(row.get('Volume', 0)),
+                }
+                print(f'  ✓ {t["ticker"]:8s} px={snapshot[t["ticker"]]["lastPx"]:.3f}  vol={snapshot[t["ticker"]]["volume"]}')
+            else:
+                print(f'  ✗ {t["yahoo"]} — empty')
+        except Exception as e:
+            print(f'  ✗ {t["yahoo"]} — {e}')
+    return snapshot
+
+
+def load_history():
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE) as f:
+                return json.load(f)
+        except:
+            pass
+    return {'snapshots': []}
+
+
+def save_history(history):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(HISTORY_FILE, 'w') as f:
+        json.dump(history, f)
+
+
+def get_historical_price(history, ticker, days_back):
+    snapshots = history.get('snapshots', [])
+    idx = len(snapshots) - 1 - days_back
+    if idx < 0:
         return None
-
-
-def compute_changes(prices):
-    n = len(prices)
-    if n == 0:
-        return {}
-    latest = prices[-1]
-
-    def get(back):
-        idx = n - 1 - back
-        return prices[idx]['close'] if idx >= 0 else None
-
-    def bp(cur, prev):
-        return round(-(cur - prev) * 100, 1) if prev is not None else None
-
-    p1m = get(22) or get(21) or get(20) or (prices[0]['close'] if n > 2 else None)
-
-    return {
-        'lastPx': latest['close'],
-        'lastDate': latest['date'],
-        'volume': latest['volume'],
-        'bp1d': bp(latest['close'], get(1)),
-        'bp5d': bp(latest['close'], get(5)),
-        'bp1m': bp(latest['close'], p1m),
-        'pts': n,
-    }
+    entry = snapshots[idx].get('data', {}).get(ticker)
+    return entry.get('lastPx') if entry else None
 
 
 def main():
+    today = datetime.now().strftime('%Y-%m-%d')
     print(f'[SOFR] Start {datetime.now().isoformat()}')
+
     tickers = generate_tickers()
-    print(f'[SOFR] Fetching {len(tickers)} contracts via yfinance...')
+    print(f'[SOFR] Fetching {len(tickers)} contracts...')
 
+    snapshot = fetch_today(tickers)
+    if not snapshot:
+        print('[SOFR] No data fetched, aborting')
+        return
+
+    # Update history
+    history = load_history()
+    snapshots = history.get('snapshots', [])
+
+    if snapshots and snapshots[-1].get('date') == today:
+        print(f'[SOFR] Updating existing snapshot for {today}')
+        snapshots[-1] = {'date': today, 'data': snapshot}
+    else:
+        print(f'[SOFR] Adding new snapshot for {today} (total: {len(snapshots) + 1})')
+        snapshots.append({'date': today, 'data': snapshot})
+
+    if len(snapshots) > MAX_HISTORY_DAYS:
+        snapshots = snapshots[-MAX_HISTORY_DAYS:]
+
+    history['snapshots'] = snapshots
+    save_history(history)
+    print(f'[SOFR] History: {len(snapshots)} trading days stored')
+
+    # Build output with changes
     results = []
-    for i, t in enumerate(tickers):
-        # First 4: 1 year for popup charts, rest: 2 months
-        period = '1y' if i < 4 else '2mo'
-        prices = fetch_history(t['yahoo'], period)
-
-        if not prices:
-            print(f'  ✗ {t["yahoo"]} — no data')
+    for t in tickers:
+        tk = t['ticker']
+        if tk not in snapshot:
             continue
 
-        c = compute_changes(prices)
-        rate = round(100 - c['lastPx'], 4)
+        px = snapshot[tk]['lastPx']
+        vol = snapshot[tk]['volume']
+        rate = round(100 - px, 4)
+
+        px_1d = get_historical_price(history, tk, 1)
+        px_5d = get_historical_price(history, tk, 5)
+        px_1m = get_historical_price(history, tk, 22) or get_historical_price(history, tk, 21) or get_historical_price(history, tk, 20)
+
+        bp = lambda c, p: round(-(c - p) * 100, 1) if p is not None else None
+
+        # Build price history array for charts (from all stored snapshots)
+        price_history = []
+        for snap in snapshots:
+            entry = snap.get('data', {}).get(tk)
+            if entry:
+                price_history.append({
+                    'date': snap['date'],
+                    'close': entry['lastPx'],
+                })
 
         entry = {
-            'ticker': t['ticker'],
+            'ticker': tk,
             'yahooTicker': t['yahoo'],
             'label': t['label'],
             'year': t['year'],
             'monthCode': t['monthCode'],
             'month': t['month'],
             'settlementDate': t['settlementDate'],
-            'lastPx': c['lastPx'],
+            'lastPx': px,
             'impRate': rate,
-            'volume': c['volume'],
-            'bp1d': c['bp1d'],
-            'bp5d': c['bp5d'],
-            'bp1m': c['bp1m'],
-            'lastDate': c['lastDate'],
+            'volume': vol,
+            'bp1d': bp(px, px_1d),
+            'bp5d': bp(px, px_5d),
+            'bp1m': bp(px, px_1m),
+            'lastDate': today,
+            'history': price_history if len(price_history) > 1 else None,
         }
-
-        if i < 4 and len(prices) > 10:
-            entry['history1y'] = prices
-
         results.append(entry)
-        print(f'  ✓ {t["ticker"]:8s} [{c["pts"]:3d}pts] px={c["lastPx"]:.3f} rate={rate:.3f}% 1d={c["bp1d"]} 5d={c["bp5d"]} 1m={c["bp1m"]} vol={c["volume"]}')
+
+        days_avail = len(snapshots) - 1
+        print(f'  → {tk:8s} rate={rate:.3f}%  1d={bp(px, px_1d)}  5d={bp(px, px_5d)}  1m={bp(px, px_1m)}  hist={len(price_history)}pts')
 
     # Group by year
     groups = {}
@@ -139,18 +177,23 @@ def main():
         for y, cs in sorted(groups.items())
     ]
 
-    out_path = os.path.join('smallfish-rates', 'public', 'data')
-    os.makedirs(out_path, exist_ok=True)
-    filepath = os.path.join(out_path, 'sofr.json')
-    with open(filepath, 'w') as f:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(OUTPUT_FILE, 'w') as f:
         json.dump({
             'count': len(results),
             'contracts': results,
             'strip': strip,
             'timestamp': datetime.now().isoformat(),
+            'historyDays': len(snapshots),
         }, f, indent=2)
 
-    print(f'\n[SOFR] Done — {len(results)}/{len(tickers)} saved to {filepath}')
+    print(f'\n[SOFR] Done — {len(results)} contracts, {len(snapshots)} days of history')
+    if len(snapshots) < 2:
+        print(f'[SOFR] ⚠ 1D changes available after tomorrow\'s run')
+    if len(snapshots) < 6:
+        print(f'[SOFR] ⚠ 5D changes available after {6 - len(snapshots)} more runs')
+    if len(snapshots) < 22:
+        print(f'[SOFR] ⚠ 1M changes available after {22 - len(snapshots)} more runs')
 
 
 if __name__ == '__main__':

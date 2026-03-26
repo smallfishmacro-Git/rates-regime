@@ -17,7 +17,7 @@ function fb(bp){if(bp==null)return'—';if(Math.abs(bp)<0.05)return'0.0';return`
 function fv(v){if(!v)return'—';if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${Math.round(v/1e3)}K`;return String(v);}
 
 function ChartPopup({c, onClose, sofr}) {
-  const h1y = c.history1y;
+  const h1y = c.history1y || c.history;
   if (!h1y || h1y.length < 5) return null;
   const W=640,H=360,P={t:30,r:55,b:40,l:55};
   const CW=W-P.l-P.r,CH=H-P.t-P.b;
@@ -101,7 +101,7 @@ export default function StripTable({strip,sofrLive,sofrLoading,currentSOFR}) {
                 <tr><td colSpan={8} style={{padding:'8px 6px 4px',color:yc.accent,fontWeight:'bold',fontSize:12,borderBottom:`1px solid ${yc.border}`,borderLeft:`3px solid ${yc.accent}`,background:yc.bg}}>{group.year}</td></tr>
                 {group.contracts.map(c=>{
                   const bps=(sofr0-c.impRate)*100;
-                  const hasChart=c.history1y&&c.history1y.length>10;
+                  const hasChart=(c.history1y||c.history)&&(c.history1y||c.history).length>5;
                   const volPct=mVol>0?((c.volume||0)/mVol)*100:0;
                   return(
                     <tr key={c.ticker} className="data-row" style={{borderBottom:`1px solid ${yc.border}`,borderLeft:`3px solid ${yc.accent}`,background:yc.bg,cursor:hasChart?'pointer':'default'}} onClick={()=>hasChart&&setChartC(c)}>
