@@ -1,18 +1,10 @@
 'use client';
-
 export default function StatusBar({ data, loading, sofrLoading }) {
   const lastUpdate = data?.lastUpdate ? new Date(data.lastUpdate).toLocaleString() : '—';
-
   return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      margin: '16px 16px 0', padding: '8px 0', borderTop: '1px solid var(--border)',
-      flexWrap: 'wrap', gap: 8,
-    }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '16px 16px 0', padding: '8px 0', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 9, color: 'var(--dim)', flexWrap: 'wrap' }}>
-        <span>FRED: <span style={{ color: data?.live ? 'var(--green)' : 'var(--red)' }}>
-          {data?.live ? '● LIVE' : '○ DEMO'}
-        </span></span>
+        <span>FRED: <span style={{ color: data?.live ? 'var(--green)' : 'var(--red)' }}>{data?.live ? '● LIVE' : '○ DEMO'}</span></span>
         <span>|</span>
         <span>SOFR: <span style={{ color: data?.sofrLive ? 'var(--green)' : sofrLoading ? 'var(--amber)' : 'var(--red)' }}>
           {sofrLoading ? '◌ LOADING...' : data?.sofrLive ? `● YAHOO (${data?.sofrCount || 0})` : '○ FALLBACK'}
