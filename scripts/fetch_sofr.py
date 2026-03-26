@@ -225,8 +225,8 @@ def main():
     }
 
     # Save to public/data/sofr.json (served statically by Vercel)
-    os.makedirs('public/data', exist_ok=True)
-    with open('public/data/sofr.json', 'w') as f:
+    os.makedirs('smallfish-rates/public/data', exist_ok=True)
+    with open('smallfish-rates/public/data/sofr.json', 'w') as f:
         json.dump(output, f, indent=2)
 
     print(f'\n[SOFR] Done — {len(results)}/{len(contracts)} contracts saved to public/data/sofr.json')
