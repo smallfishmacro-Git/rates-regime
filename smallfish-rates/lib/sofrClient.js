@@ -1,20 +1,20 @@
-// Client-side helper — fetches all SOFR from /api/sofr batch endpoint
-
-const CODE_MONTHS = { H: 3, M: 6, U: 9, Z: 12 };
+// Client-side SOFR data loader
+// Reads from /data/sofr.json (updated daily by GitHub Actions)
 
 export async function fetchAllSOFR() {
   try {
-    const res = await fetch('/api/sofr');
-    if (!res.ok) return { contracts: [], strip: [] };
+    const res = await fetch('/data/sofr.json');
+    if (!res.ok) return { contracts: [], strip: [], count: 0 };
     const data = await res.json();
     return {
       contracts: data.contracts || [],
       strip: data.strip || [],
       count: data.count || 0,
+      timestamp: data.timestamp || null,
     };
   } catch (err) {
     console.error('SOFR fetch error:', err);
-    return { contracts: [], strip: [] };
+    return { contracts: [], strip: [], count: 0 };
   }
 }
 
