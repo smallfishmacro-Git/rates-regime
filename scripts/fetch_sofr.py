@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Fetch SOFR futures data from Yahoo Finance and save to smallfish-rates/public/data/sofr.json
-Run daily via GitHub Actions.
+Fetch SOFR futures from Yahoo Finance using CSV download for full history.
+Saves to smallfish-rates/public/data/sofr.json
 """
 
 import json
@@ -9,9 +9,12 @@ import urllib.request
 import urllib.parse
 import time
 import os
+import csv
+import io
 from datetime import datetime, timedelta
 
 CODES = {'H': ('Mar', 3), 'M': ('Jun', 6), 'U': ('Sep', 9), 'Z': ('Dec', 12)}
+
 
 def generate_tickers():
     now = datetime.now()
@@ -44,25 +47,19 @@ def generate_tickers():
 def get_yahoo_crumb():
     try:
         req = urllib.request.Request('https://fc.yahoo.com', headers={
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        })
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'})
         try:
             resp = urllib.request.urlopen(req, timeout=10)
         except urllib.error.HTTPError as e:
             resp = e
-
         cookies = ''
         for header in resp.headers.get_all('Set-Cookie') or []:
-            cookie = header.split(';')[0]
-            cookies += ('; ' if cookies else '') + cookie
-
+            cookies += ('; ' if cookies else '') + header.split(';')[0]
         req2 = urllib.request.Request('https://query2.finance.yahoo.com/v1/test/getcrumb', headers={
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-            'Cookie': cookies,
-        })
+            'Cookie': cookies})
         resp2 = urllib.request.urlopen(req2, timeout=10)
         crumb = resp2.read().decode('utf-8').strip()
-
         if crumb and '<' not in crumb:
             print(f'[Auth] Got crumb: {crumb[:8]}...')
             return crumb, cookies
@@ -71,147 +68,143 @@ def get_yahoo_crumb():
     return None, None
 
 
-def fetch_chart(ticker, period_days, crumb=None, cookies=None):
+def fetch_csv(ticker, days, crumb, cookies):
+    """Download CSV history from Yahoo - most reliable for futures."""
     now = int(time.time())
-    period1 = now - period_days * 86400
-
-    url = f'https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}?period1={period1}&period2={now}&interval=1d'
+    p1 = now - days * 86400
+    url = (f'https://query1.finance.yahoo.com/v7/finance/download/{urllib.parse.quote(ticker)}'
+           f'?period1={p1}&period2={now}&interval=1d&events=history')
     if crumb:
         url += f'&crumb={urllib.parse.quote(crumb)}'
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-    }
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
     if cookies:
         headers['Cookie'] = cookies
 
     try:
         req = urllib.request.Request(url, headers=headers)
         resp = urllib.request.urlopen(req, timeout=15)
-        data = json.loads(resp.read().decode('utf-8'))
-
-        result = data.get('chart', {}).get('result', [{}])[0]
-        timestamps = result.get('timestamp', [])
-        quotes = result.get('indicators', {}).get('quote', [{}])[0]
-        closes = quotes.get('close', [])
-        volumes = quotes.get('volume', [])
-
+        text = resp.read().decode('utf-8')
+        reader = csv.DictReader(io.StringIO(text))
         prices = []
-        for i, ts in enumerate(timestamps):
-            c = closes[i] if i < len(closes) else None
-            v = volumes[i] if i < len(volumes) else 0
-            if c is not None and not (isinstance(c, float) and c != c):
-                prices.append({
-                    'date': datetime.fromtimestamp(ts).strftime('%Y-%m-%d'),
-                    'close': round(c, 4),
-                    'volume': v or 0,
-                })
+        for row in reader:
+            try:
+                close = float(row['Close'])
+                vol = int(float(row.get('Volume', 0)))
+                if close > 0:
+                    prices.append({'date': row['Date'], 'close': round(close, 4), 'volume': vol})
+            except (ValueError, KeyError):
+                continue
         return prices
     except Exception as e:
-        print(f'[Fetch] {ticker} failed: {e}')
+        print(f'  [CSV] {ticker}: {e}')
         return None
 
 
-def compute_changes(prices):
+def fetch_chart(ticker, days, crumb, cookies):
+    """Fallback: chart API."""
+    now = int(time.time())
+    p1 = now - days * 86400
+    url = f'https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(ticker)}?period1={p1}&period2={now}&interval=1d'
+    if crumb:
+        url += f'&crumb={urllib.parse.quote(crumb)}'
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
+    if cookies:
+        headers['Cookie'] = cookies
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        resp = urllib.request.urlopen(req, timeout=15)
+        data = json.loads(resp.read().decode('utf-8'))
+        result = data.get('chart', {}).get('result', [{}])[0]
+        ts = result.get('timestamp', [])
+        closes = result.get('indicators', {}).get('quote', [{}])[0].get('close', [])
+        volumes = result.get('indicators', {}).get('quote', [{}])[0].get('volume', [])
+        prices = []
+        for i in range(len(ts)):
+            c = closes[i] if i < len(closes) else None
+            v = volumes[i] if i < len(volumes) else 0
+            if c is not None and not (isinstance(c, float) and c != c):
+                prices.append({'date': datetime.utcfromtimestamp(ts[i]).strftime('%Y-%m-%d'),
+                               'close': round(c, 4), 'volume': v or 0})
+        return prices
+    except Exception as e:
+        print(f'  [Chart] {ticker}: {e}')
+        return None
+
+
+def fetch(ticker, days, crumb, cookies):
+    """Try CSV first, then chart API."""
+    prices = fetch_csv(ticker, days, crumb, cookies)
+    if prices and len(prices) > 1:
+        return prices, 'CSV'
+    prices = fetch_chart(ticker, days, crumb, cookies)
+    if prices and len(prices) > 1:
+        return prices, 'Chart'
+    if prices:
+        return prices, 'Single'
+    return None, None
+
+
+def compute(prices):
     n = len(prices)
     if n == 0:
         return {}
-
     latest = prices[-1]
-    def get_prev(days_back):
-        idx = n - 1 - days_back
-        return prices[idx]['close'] if idx >= 0 else None
-
-    def bp_change(current, previous):
-        if previous is None:
-            return None
-        return round(-(current - previous) * 100, 1)
-
-    prev_1d = get_prev(1)
-    prev_5d = get_prev(5)
-    prev_1m = get_prev(22) or get_prev(21) or get_prev(20) or (prices[0]['close'] if n > 2 else None)
-
+    g = lambda d: prices[n-1-d]['close'] if n-1-d >= 0 else None
+    bp = lambda c, p: round(-(c - p) * 100, 1) if p is not None else None
+    p1m = g(22) or g(21) or g(20) or (prices[0]['close'] if n > 2 else None)
     return {
-        'lastPx': latest['close'],
-        'lastDate': latest['date'],
-        'volume': latest['volume'],
-        'bp1d': bp_change(latest['close'], prev_1d),
-        'bp5d': bp_change(latest['close'], prev_5d),
-        'bp1m': bp_change(latest['close'], prev_1m),
+        'lastPx': latest['close'], 'lastDate': latest['date'], 'volume': latest['volume'],
+        'bp1d': bp(latest['close'], g(1)),
+        'bp5d': bp(latest['close'], g(5)),
+        'bp1m': bp(latest['close'], p1m),
+        'pts': n,
     }
 
 
 def main():
-    print(f'[SOFR] Starting fetch at {datetime.now().isoformat()}')
-
+    print(f'[SOFR] Start {datetime.now().isoformat()}')
     crumb, cookies = get_yahoo_crumb()
-    contracts = generate_tickers()
-    print(f'[SOFR] Fetching {len(contracts)} contracts...')
+    tickers = generate_tickers()
+    print(f'[SOFR] Fetching {len(tickers)} contracts...')
 
     results = []
-    for i, contract in enumerate(contracts):
+    for i, t in enumerate(tickers):
         days = 380 if i < 4 else 50
-        prices = fetch_chart(contract['yahoo'], days, crumb, cookies)
-
+        prices, method = fetch(t['yahoo'], days, crumb, cookies)
         if not prices:
-            print(f'  ✗ {contract["yahoo"]} — no data')
+            print(f'  ✗ {t["yahoo"]}')
             continue
 
-        changes = compute_changes(prices)
-        imp_rate = round(100 - changes['lastPx'], 4)
-
+        c = compute(prices)
+        rate = round(100 - c['lastPx'], 4)
         entry = {
-            'ticker': contract['ticker'],
-            'yahooTicker': contract['yahoo'],
-            'label': contract['label'],
-            'year': contract['year'],
-            'monthCode': contract['monthCode'],
-            'month': contract['month'],
-            'settlementDate': contract['settlementDate'],
-            'lastPx': changes['lastPx'],
-            'impRate': imp_rate,
-            'volume': changes['volume'],
-            'bp1d': changes['bp1d'],
-            'bp5d': changes['bp5d'],
-            'bp1m': changes['bp1m'],
-            'lastDate': changes['lastDate'],
+            'ticker': t['ticker'], 'yahooTicker': t['yahoo'], 'label': t['label'],
+            'year': t['year'], 'monthCode': t['monthCode'], 'month': t['month'],
+            'settlementDate': t['settlementDate'],
+            'lastPx': c['lastPx'], 'impRate': rate, 'volume': c['volume'],
+            'bp1d': c['bp1d'], 'bp5d': c['bp5d'], 'bp1m': c['bp1m'],
+            'lastDate': c['lastDate'],
         }
-
-        if i < 4:
+        if i < 4 and len(prices) > 10:
             entry['history1y'] = prices
-
         results.append(entry)
-        print(f'  ✓ {contract["ticker"]:8s} px={changes["lastPx"]:.3f}  rate={imp_rate:.3f}%  1d={changes["bp1d"]}  5d={changes["bp5d"]}  1m={changes["bp1m"]}  vol={changes["volume"]}')
+        print(f'  ✓ {t["ticker"]:8s} [{method:5s} {c["pts"]:3d}pts] px={c["lastPx"]:.3f} rate={rate:.3f}% 1d={c["bp1d"]} 5d={c["bp5d"]} 1m={c["bp1m"]} vol={c["volume"]}')
         time.sleep(0.3)
 
-    # Group by year
     groups = {}
     for c in results:
-        y = c['year']
-        if y not in groups:
-            groups[y] = []
-        groups[y].append(c)
+        groups.setdefault(c['year'], []).append(c)
+    strip = [{'year': y, 'contracts': sorted(cs, key=lambda x: {'H':0,'M':1,'U':2,'Z':3}[x['monthCode']])}
+             for y, cs in sorted(groups.items())]
 
-    strip = [
-        {'year': y, 'contracts': sorted(cs, key=lambda x: {'H': 0, 'M': 1, 'U': 2, 'Z': 3}[x['monthCode']])}
-        for y, cs in sorted(groups.items())
-    ]
-
-    output = {
-        'count': len(results),
-        'contracts': results,
-        'strip': strip,
-        'timestamp': datetime.now().isoformat(),
-    }
-
-    # === CORRECT PATH: write into smallfish-rates/public/data/ ===
     out_path = os.path.join('smallfish-rates', 'public', 'data')
     os.makedirs(out_path, exist_ok=True)
     filepath = os.path.join(out_path, 'sofr.json')
     with open(filepath, 'w') as f:
-        json.dump(output, f, indent=2)
-
-    print(f'\n[SOFR] Done — {len(results)}/{len(contracts)} contracts saved to {filepath}')
+        json.dump({'count': len(results), 'contracts': results, 'strip': strip,
+                   'timestamp': datetime.now().isoformat()}, f, indent=2)
+    print(f'\n[SOFR] Done — {len(results)}/{len(tickers)} saved to {filepath}')
 
 
 if __name__ == '__main__':
