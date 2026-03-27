@@ -30,6 +30,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add smallfish-rates/public/data/sofr.json
+          git add smallfish-rates/public/data/sofr.json smallfish-rates/public/data/sofr_history.json
           git diff --cached --quiet || git commit -m "📊 SOFR update $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
