@@ -9,14 +9,23 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2026-03-18",
-      "lastPx": 96.3175,
-      "impRate": 3.6825,
-      "volume": 178329,
-      "bp1d": null,
+      "lastPx": 96.32,
+      "impRate": 3.68,
+      "volume": 76,
+      "bp1d": -0.2,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.3175
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.32
+        }
+      ]
     },
     {
       "ticker": "SFRM6",
@@ -26,14 +35,23 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2026-06-17",
-      "lastPx": 96.29,
-      "impRate": 3.71,
-      "volume": 509819,
-      "bp1d": null,
+      "lastPx": 96.32,
+      "impRate": 3.68,
+      "volume": 343,
+      "bp1d": -3.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.29
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.32
+        }
+      ]
     },
     {
       "ticker": "SFRU6",
@@ -43,14 +61,23 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2026-09-16",
-      "lastPx": 96.24,
-      "impRate": 3.76,
-      "volume": 517716,
-      "bp1d": null,
+      "lastPx": 96.31,
+      "impRate": 3.69,
+      "volume": 1037,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.24
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.31
+        }
+      ]
     },
     {
       "ticker": "SFRZ6",
@@ -60,14 +87,23 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2026-12-16",
-      "lastPx": 96.23,
-      "impRate": 3.77,
-      "volume": 704159,
-      "bp1d": null,
+      "lastPx": 96.335,
+      "impRate": 3.665,
+      "volume": 1260,
+      "bp1d": -10.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.23
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.335
+        }
+      ]
     },
     {
       "ticker": "SFRH7",
@@ -77,14 +113,23 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2027-03-17",
-      "lastPx": 96.245,
-      "impRate": 3.755,
-      "volume": 592855,
-      "bp1d": null,
+      "lastPx": 96.355,
+      "impRate": 3.645,
+      "volume": 1740,
+      "bp1d": -11.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.245
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.355
+        }
+      ]
     },
     {
       "ticker": "SFRM7",
@@ -94,14 +139,23 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2027-06-16",
-      "lastPx": 96.32,
-      "impRate": 3.68,
-      "volume": 458030,
-      "bp1d": null,
+      "lastPx": 96.425,
+      "impRate": 3.575,
+      "volume": 1920,
+      "bp1d": -10.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.32
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.425
+        }
+      ]
     },
     {
       "ticker": "SFRU7",
@@ -111,14 +165,23 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2027-09-15",
-      "lastPx": 96.42,
-      "impRate": 3.58,
-      "volume": 373850,
-      "bp1d": null,
+      "lastPx": 96.515,
+      "impRate": 3.485,
+      "volume": 412,
+      "bp1d": -9.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.42
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.515
+        }
+      ]
     },
     {
       "ticker": "SFRZ7",
@@ -128,14 +191,23 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2027-12-15",
-      "lastPx": 96.49,
-      "impRate": 3.51,
-      "volume": 392839,
-      "bp1d": null,
+      "lastPx": 96.58,
+      "impRate": 3.42,
+      "volume": 816,
+      "bp1d": -9.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.49
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.58
+        }
+      ]
     },
     {
       "ticker": "SFRH8",
@@ -145,14 +217,23 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2028-03-15",
-      "lastPx": 96.495,
-      "impRate": 3.505,
-      "volume": 320260,
-      "bp1d": null,
+      "lastPx": 96.57,
+      "impRate": 3.43,
+      "volume": 367,
+      "bp1d": -7.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.495
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.57
+        }
+      ]
     },
     {
       "ticker": "SFRM8",
@@ -162,14 +243,23 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2028-06-21",
-      "lastPx": 96.46,
-      "impRate": 3.54,
-      "volume": 206649,
-      "bp1d": null,
+      "lastPx": 96.535,
+      "impRate": 3.465,
+      "volume": 395,
+      "bp1d": -7.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.46
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.535
+        }
+      ]
     },
     {
       "ticker": "SFRU8",
@@ -179,14 +269,23 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2028-09-20",
-      "lastPx": 96.425,
-      "impRate": 3.575,
-      "volume": 163583,
-      "bp1d": null,
+      "lastPx": 96.495,
+      "impRate": 3.505,
+      "volume": 303,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.425
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.495
+        }
+      ]
     },
     {
       "ticker": "SFRZ8",
@@ -196,14 +295,23 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2028-12-20",
-      "lastPx": 96.39,
-      "impRate": 3.61,
-      "volume": 150184,
-      "bp1d": null,
+      "lastPx": 96.465,
+      "impRate": 3.535,
+      "volume": 144,
+      "bp1d": -7.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.39
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.465
+        }
+      ]
     },
     {
       "ticker": "SFRH9",
@@ -213,14 +321,23 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2029-03-21",
-      "lastPx": 96.36,
-      "impRate": 3.64,
-      "volume": 128326,
-      "bp1d": null,
+      "lastPx": 96.43,
+      "impRate": 3.57,
+      "volume": 246,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.36
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.43
+        }
+      ]
     },
     {
       "ticker": "SFRM9",
@@ -230,14 +347,23 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2029-06-20",
-      "lastPx": 96.325,
-      "impRate": 3.675,
-      "volume": 66255,
-      "bp1d": null,
+      "lastPx": 96.395,
+      "impRate": 3.605,
+      "volume": 195,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.325
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.395
+        }
+      ]
     },
     {
       "ticker": "SFRU9",
@@ -247,14 +373,23 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2029-09-19",
-      "lastPx": 96.29,
-      "impRate": 3.71,
-      "volume": 55897,
-      "bp1d": null,
+      "lastPx": 96.365,
+      "impRate": 3.635,
+      "volume": 58,
+      "bp1d": -7.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.29
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.365
+        }
+      ]
     },
     {
       "ticker": "SFRZ9",
@@ -264,14 +399,23 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2029-12-19",
-      "lastPx": 96.245,
-      "impRate": 3.755,
-      "volume": 52933,
-      "bp1d": null,
+      "lastPx": 96.315,
+      "impRate": 3.685,
+      "volume": 143,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.245
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.315
+        }
+      ]
     },
     {
       "ticker": "SFRH0",
@@ -281,14 +425,23 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2030-03-20",
-      "lastPx": 96.2,
-      "impRate": 3.8,
-      "volume": 40825,
-      "bp1d": null,
+      "lastPx": 96.27,
+      "impRate": 3.73,
+      "volume": 95,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.2
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.27
+        }
+      ]
     },
     {
       "ticker": "SFRM0",
@@ -298,14 +451,23 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2030-06-19",
-      "lastPx": 96.15,
-      "impRate": 3.85,
-      "volume": 32999,
-      "bp1d": null,
+      "lastPx": 96.22,
+      "impRate": 3.78,
+      "volume": 36,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.15
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.22
+        }
+      ]
     },
     {
       "ticker": "SFRU0",
@@ -315,14 +477,23 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2030-09-18",
-      "lastPx": 96.1,
-      "impRate": 3.9,
-      "volume": 32953,
-      "bp1d": null,
+      "lastPx": 96.17,
+      "impRate": 3.83,
+      "volume": 58,
+      "bp1d": -7.0,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.1
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.17
+        }
+      ]
     },
     {
       "ticker": "SFRZ0",
@@ -332,14 +503,23 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2030-12-18",
-      "lastPx": 96.045,
-      "impRate": 3.955,
-      "volume": 33439,
-      "bp1d": null,
+      "lastPx": 96.12,
+      "impRate": 3.88,
+      "volume": 40,
+      "bp1d": -7.5,
       "bp5d": null,
       "bp1m": null,
-      "lastDate": "2026-03-27",
-      "history": null
+      "lastDate": "2026-03-30",
+      "history": [
+        {
+          "date": "2026-03-27",
+          "close": 96.045
+        },
+        {
+          "date": "2026-03-30",
+          "close": 96.12
+        }
+      ]
     }
   ],
   "strip": [
@@ -354,14 +534,23 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2026-03-18",
-          "lastPx": 96.3175,
-          "impRate": 3.6825,
-          "volume": 178329,
-          "bp1d": null,
+          "lastPx": 96.32,
+          "impRate": 3.68,
+          "volume": 76,
+          "bp1d": -0.2,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.3175
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.32
+            }
+          ]
         },
         {
           "ticker": "SFRM6",
@@ -371,14 +560,23 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2026-06-17",
-          "lastPx": 96.29,
-          "impRate": 3.71,
-          "volume": 509819,
-          "bp1d": null,
+          "lastPx": 96.32,
+          "impRate": 3.68,
+          "volume": 343,
+          "bp1d": -3.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.29
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.32
+            }
+          ]
         },
         {
           "ticker": "SFRU6",
@@ -388,14 +586,23 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2026-09-16",
-          "lastPx": 96.24,
-          "impRate": 3.76,
-          "volume": 517716,
-          "bp1d": null,
+          "lastPx": 96.31,
+          "impRate": 3.69,
+          "volume": 1037,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.24
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.31
+            }
+          ]
         },
         {
           "ticker": "SFRZ6",
@@ -405,14 +612,23 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2026-12-16",
-          "lastPx": 96.23,
-          "impRate": 3.77,
-          "volume": 704159,
-          "bp1d": null,
+          "lastPx": 96.335,
+          "impRate": 3.665,
+          "volume": 1260,
+          "bp1d": -10.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.23
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.335
+            }
+          ]
         }
       ]
     },
@@ -427,14 +643,23 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2027-03-17",
-          "lastPx": 96.245,
-          "impRate": 3.755,
-          "volume": 592855,
-          "bp1d": null,
+          "lastPx": 96.355,
+          "impRate": 3.645,
+          "volume": 1740,
+          "bp1d": -11.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.245
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.355
+            }
+          ]
         },
         {
           "ticker": "SFRM7",
@@ -444,14 +669,23 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2027-06-16",
-          "lastPx": 96.32,
-          "impRate": 3.68,
-          "volume": 458030,
-          "bp1d": null,
+          "lastPx": 96.425,
+          "impRate": 3.575,
+          "volume": 1920,
+          "bp1d": -10.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.32
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.425
+            }
+          ]
         },
         {
           "ticker": "SFRU7",
@@ -461,14 +695,23 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2027-09-15",
-          "lastPx": 96.42,
-          "impRate": 3.58,
-          "volume": 373850,
-          "bp1d": null,
+          "lastPx": 96.515,
+          "impRate": 3.485,
+          "volume": 412,
+          "bp1d": -9.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.42
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.515
+            }
+          ]
         },
         {
           "ticker": "SFRZ7",
@@ -478,14 +721,23 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2027-12-15",
-          "lastPx": 96.49,
-          "impRate": 3.51,
-          "volume": 392839,
-          "bp1d": null,
+          "lastPx": 96.58,
+          "impRate": 3.42,
+          "volume": 816,
+          "bp1d": -9.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.49
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.58
+            }
+          ]
         }
       ]
     },
@@ -500,14 +752,23 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2028-03-15",
-          "lastPx": 96.495,
-          "impRate": 3.505,
-          "volume": 320260,
-          "bp1d": null,
+          "lastPx": 96.57,
+          "impRate": 3.43,
+          "volume": 367,
+          "bp1d": -7.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.495
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.57
+            }
+          ]
         },
         {
           "ticker": "SFRM8",
@@ -517,14 +778,23 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2028-06-21",
-          "lastPx": 96.46,
-          "impRate": 3.54,
-          "volume": 206649,
-          "bp1d": null,
+          "lastPx": 96.535,
+          "impRate": 3.465,
+          "volume": 395,
+          "bp1d": -7.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.46
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.535
+            }
+          ]
         },
         {
           "ticker": "SFRU8",
@@ -534,14 +804,23 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2028-09-20",
-          "lastPx": 96.425,
-          "impRate": 3.575,
-          "volume": 163583,
-          "bp1d": null,
+          "lastPx": 96.495,
+          "impRate": 3.505,
+          "volume": 303,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.425
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.495
+            }
+          ]
         },
         {
           "ticker": "SFRZ8",
@@ -551,14 +830,23 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2028-12-20",
-          "lastPx": 96.39,
-          "impRate": 3.61,
-          "volume": 150184,
-          "bp1d": null,
+          "lastPx": 96.465,
+          "impRate": 3.535,
+          "volume": 144,
+          "bp1d": -7.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.39
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.465
+            }
+          ]
         }
       ]
     },
@@ -573,14 +861,23 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2029-03-21",
-          "lastPx": 96.36,
-          "impRate": 3.64,
-          "volume": 128326,
-          "bp1d": null,
+          "lastPx": 96.43,
+          "impRate": 3.57,
+          "volume": 246,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.36
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.43
+            }
+          ]
         },
         {
           "ticker": "SFRM9",
@@ -590,14 +887,23 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2029-06-20",
-          "lastPx": 96.325,
-          "impRate": 3.675,
-          "volume": 66255,
-          "bp1d": null,
+          "lastPx": 96.395,
+          "impRate": 3.605,
+          "volume": 195,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.325
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.395
+            }
+          ]
         },
         {
           "ticker": "SFRU9",
@@ -607,14 +913,23 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2029-09-19",
-          "lastPx": 96.29,
-          "impRate": 3.71,
-          "volume": 55897,
-          "bp1d": null,
+          "lastPx": 96.365,
+          "impRate": 3.635,
+          "volume": 58,
+          "bp1d": -7.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.29
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.365
+            }
+          ]
         },
         {
           "ticker": "SFRZ9",
@@ -624,14 +939,23 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2029-12-19",
-          "lastPx": 96.245,
-          "impRate": 3.755,
-          "volume": 52933,
-          "bp1d": null,
+          "lastPx": 96.315,
+          "impRate": 3.685,
+          "volume": 143,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.245
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.315
+            }
+          ]
         }
       ]
     },
@@ -646,14 +970,23 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2030-03-20",
-          "lastPx": 96.2,
-          "impRate": 3.8,
-          "volume": 40825,
-          "bp1d": null,
+          "lastPx": 96.27,
+          "impRate": 3.73,
+          "volume": 95,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.2
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.27
+            }
+          ]
         },
         {
           "ticker": "SFRM0",
@@ -663,14 +996,23 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2030-06-19",
-          "lastPx": 96.15,
-          "impRate": 3.85,
-          "volume": 32999,
-          "bp1d": null,
+          "lastPx": 96.22,
+          "impRate": 3.78,
+          "volume": 36,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.15
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.22
+            }
+          ]
         },
         {
           "ticker": "SFRU0",
@@ -680,14 +1022,23 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2030-09-18",
-          "lastPx": 96.1,
-          "impRate": 3.9,
-          "volume": 32953,
-          "bp1d": null,
+          "lastPx": 96.17,
+          "impRate": 3.83,
+          "volume": 58,
+          "bp1d": -7.0,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.1
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.17
+            }
+          ]
         },
         {
           "ticker": "SFRZ0",
@@ -697,18 +1048,27 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2030-12-18",
-          "lastPx": 96.045,
-          "impRate": 3.955,
-          "volume": 33439,
-          "bp1d": null,
+          "lastPx": 96.12,
+          "impRate": 3.88,
+          "volume": 40,
+          "bp1d": -7.5,
           "bp5d": null,
           "bp1m": null,
-          "lastDate": "2026-03-27",
-          "history": null
+          "lastDate": "2026-03-30",
+          "history": [
+            {
+              "date": "2026-03-27",
+              "close": 96.045
+            },
+            {
+              "date": "2026-03-30",
+              "close": 96.12
+            }
+          ]
         }
       ]
     }
   ],
-  "timestamp": "2026-03-27T22:35:38.248319",
-  "historyDays": 1
+  "timestamp": "2026-03-30T22:39:44.175217",
+  "historyDays": 2
 }
