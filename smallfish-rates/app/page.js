@@ -84,7 +84,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <MetricBoxes effr={currentEFFR} terminal={terminalRate} meetings={meetings} />
+          <MetricBoxes effr={currentEFFR} terminal={terminalRate} meetings={meetings} sofrContracts={sofrContracts} currentSOFR={currentSOFR} />
           <div style={{ marginTop: 12 }} className="fade-in">
             {stirTab === 'MEETINGS' && <MeetingsView meetings={meetings} dotPlot={data?.dotPlot} effr={currentEFFR} />}
             {stirTab === 'STRIP' && <StripTable strip={strip} sofrLive={sofrLive} sofrLoading={sofrLoading} currentSOFR={currentSOFR} />}

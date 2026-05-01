@@ -17,7 +17,7 @@ export default function MeetingsView({ meetings, dotPlot, effr }) {
 }
 
 function ImpliedPathChart({ meetings, effr, dotPlot }) {
-  const w = 560, h = 250, pad = { t: 20, r: 25, b: 55, l: 50 };
+  const w = 700, h = 220, pad = { t: 20, r: 25, b: 55, l: 50 };
   const cw = w - pad.l - pad.r;
   const ch = h - pad.t - pad.b;
   const currentRate = effr || 3.58;
@@ -54,7 +54,7 @@ function ImpliedPathChart({ meetings, effr, dotPlot }) {
   });
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', maxHeight: 250 }}>
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', display: 'block' }}>
       <defs>
         <filter id="glow"><feGaussianBlur stdDeviation="2" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
         <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">

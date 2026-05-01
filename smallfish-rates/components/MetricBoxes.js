@@ -1,43 +1,76 @@
 'use client';
 
-export default function MetricBoxes({ effr, terminal, terminalContract, meetings }) {
-  const ffrToTerm = ((terminal - effr) * 100).toFixed(1);
-  const m6 = meetings[3]?.impliedRate;
-  const m12 = meetings[meetings.length - 1]?.impliedRate;
-  const term6m = m6 ? ((m6 - effr) * 100).toFixed(1) : '—';
-  const term12m = m12 ? ((m12 - effr) * 100).toFixed(1) : '—';
+export default function MetricBoxes({ effr, terminal, meetings, sofrContracts, currentSOFR }) {
+  const sofr = currentSOFR || 3.56;
+  const allContracts = sofrContracts || [];
 
-  const fmtBp = (v) => {
-    if (v === '—') return '—';
-    const n = parseFloat(v);
-    return `${n >= 0 ? '+' : ''}${n}bp`;
-  };
+  let peakContract = null;
+  let peakRate = sofr;
+  let peakIdx = -1;
+  let isCutting = false;
 
-  const bpColor = (v) => {
-    if (v === '—') return 'var(--dim)';
-    return parseFloat(v) < 0 ? 'var(--red)' : 'var(--green)';
-  };
+  if (meetings && meetings.length > 0) {
+    meetings.forEach((m, i) => {
+      const rate = m.postMtg ?? m.impliedRate ?? 0;
+      if (rate > peakRate) {
+        peakRate = rate;
+        peakIdx = i;
+        peakContract = m;
+      }
+    });
+  }
+
+  if (peakIdx === -1 && meetings && meetings.length > 0) {
+    let troughRate = sofr;
+    meetings.forEach((m, i) => {
+      const rate = m.postMtg ?? m.impliedRate ?? 0;
+      if (rate < troughRate) {
+        troughRate = rate;
+        peakIdx = i;
+        peakContract = m;
+        peakRate = rate;
+      }
+    });
+    isCutting = true;
+  }
+
+  const ffrToTermBp = ((peakRate - sofr) * 100).toFixed(1);
+  const m6Idx = Math.min((peakIdx >= 0 ? peakIdx : 0) + 6, (meetings?.length || 1) - 1);
+  const rate6m = meetings?.[m6Idx]?.postMtg ?? meetings?.[m6Idx]?.impliedRate ?? peakRate;
+  const termTo6m = ((rate6m - peakRate) * 100).toFixed(1);
+  const m12Idx = Math.min((peakIdx >= 0 ? peakIdx : 0) + 12, (meetings?.length || 1) - 1);
+  const rate12m = meetings?.[m12Idx]?.postMtg ?? meetings?.[m12Idx]?.impliedRate ?? peakRate;
+  const termTo12m = ((rate12m - peakRate) * 100).toFixed(1);
+
+  const termMeetingsOut = peakIdx >= 0 ? peakIdx + 1 : '?';
+  const peakLabel = peakContract?.contract || '—';
+  const m6Label = meetings?.[m6Idx]?.contract || '—';
+  const m12Label = meetings?.[m12Idx]?.contract || '—';
+
+  const fmtBp = (v) => { const n = parseFloat(v); return `${n >= 0 ? '+' : ''}${n}bp`; };
+  const bpColor = (v) => { const n = parseFloat(v); if (Math.abs(n) < 0.5) return 'var(--dim)'; return n > 0 ? 'var(--red)' : 'var(--green)'; };
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
       <div className="metric-box">
-        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERMINAL</div>
-        <div style={{ fontSize: 18, fontWeight: 'bold', color: 'var(--green)' }}>{terminal.toFixed(3)}%</div>
-        <div style={{ fontSize: 9, color: 'var(--dim)', marginTop: 1 }}>
-          {terminalContract || meetings[meetings.length - 1]?.contract || 'FFM7'} M+{meetings.length || 10}
-        </div>
+        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERMINAL RATE (T)</div>
+        <div style={{ fontSize: 18, fontWeight: 'bold', color: isCutting ? 'var(--green)' : 'var(--red)' }}>{peakRate.toFixed(3)}%</div>
+        <div style={{ fontSize: 8, color: 'var(--dim)', marginTop: 2, lineHeight: 1.3 }}>{peakLabel} | M+{termMeetingsOut} | {isCutting ? 'TROUGH (CUTS)' : 'PEAK (HIKES PRICED)'}</div>
       </div>
       <div className="metric-box">
-        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>EFFR→TERM</div>
-        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(ffrToTerm) }}>{fmtBp(ffrToTerm)}</div>
+        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>SOFR TO TERMINAL</div>
+        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(ffrToTermBp) }}>{fmtBp(ffrToTermBp)}</div>
+        <div style={{ fontSize: 8, color: 'var(--dim)', marginTop: 2, lineHeight: 1.3 }}>SOFR ({sofr.toFixed(3)}%) vs {peakLabel} ({peakRate.toFixed(3)}%)</div>
       </div>
       <div className="metric-box">
-        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERM→+6M</div>
-        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(term6m) }}>{fmtBp(term6m)}</div>
+        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERMINAL TO +6 MONTHS</div>
+        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(termTo6m) }}>{fmtBp(termTo6m)}</div>
+        <div style={{ fontSize: 8, color: 'var(--dim)', marginTop: 2, lineHeight: 1.3 }}>{peakLabel} ({peakRate.toFixed(3)}%) vs {m6Label} ({rate6m.toFixed(3)}%)</div>
       </div>
       <div className="metric-box">
-        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERM→+12M</div>
-        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(term12m) }}>{fmtBp(term12m)}</div>
+        <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 2 }}>TERMINAL TO +12 MONTHS</div>
+        <div style={{ fontSize: 18, fontWeight: 'bold', color: bpColor(termTo12m) }}>{fmtBp(termTo12m)}</div>
+        <div style={{ fontSize: 8, color: 'var(--dim)', marginTop: 2, lineHeight: 1.3 }}>{peakLabel} ({peakRate.toFixed(3)}%) vs {m12Label} ({rate12m.toFixed(3)}%)</div>
       </div>
     </div>
   );
