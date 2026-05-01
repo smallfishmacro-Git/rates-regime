@@ -128,7 +128,7 @@ function ProbabilityTable({ meetings }) {
           {meetings.map((m, idx) => {
             const isYearBreak = idx > 0 && m.date.slice(0, 4) !== meetings[idx - 1].date.slice(0, 4);
             const cum = m.cumMoves || 0;
-            const postMtgChanged = Math.abs((m.postMtg - m.rate) * 100) > 0.5;
+            const postMtgChanged = Math.abs(((m.postMtg ?? 0) - (m.rate ?? 0)) * 100) > 0.5;
 
             return (
               <Fragment key={m.meeting + m.date}>
@@ -146,13 +146,13 @@ function ProbabilityTable({ meetings }) {
                   {/* Contract */}
                   <td style={{ padding: '4px 6px', color: 'var(--dim)', fontSize: 10 }}>{m.contract}</td>
                   {/* Rate going in */}
-                  <td style={{ padding: '4px 6px', textAlign: 'right' }}>{m.rate.toFixed(3)}</td>
+                  <td style={{ padding: '4px 6px', textAlign: 'right' }}>{(m.rate ?? m.impliedRate ?? 0).toFixed(3)}</td>
                   {/* Post-meeting rate (highlighted if different) */}
                   <td style={{
                     padding: '4px 6px', textAlign: 'right',
                     color: postMtgChanged ? 'var(--amber)' : 'var(--text)',
                     fontWeight: postMtgChanged ? 'bold' : 'normal',
-                  }}>{m.postMtg.toFixed(3)}</td>
+                  }}>{(m.postMtg ?? m.impliedRate ?? 0).toFixed(3)}</td>
                   {/* Cut columns: -75, -50, -25 */}
                   <ProbCell value={m.cut75} type="cut" />
                   <ProbCell value={m.cut50} type="cut" />
