@@ -29,7 +29,9 @@ export async function GET(request) {
 
     const [rateData, cpiData] = await Promise.all([
       fetchMultipleSeries(rateSeries, 5, apiKey),
-      fetchMultipleSeries(['CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE'], 36, apiKey),
+      // Full history from CPIAUCSL inception (1947-01) — series with later starts
+      // (CPILFESL 1957, PCEPI/PCEPILFE 1959) just return their available range.
+      fetchMultipleSeries(['CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE'], 5, apiKey, '1947-01-01'),
     ]);
 
     const rates = {};

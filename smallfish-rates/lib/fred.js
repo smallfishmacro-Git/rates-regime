@@ -43,14 +43,27 @@ export const SERIES = {
 };
 
 /**
- * Fetch a FRED series with N most recent observations
+ * Fetch a FRED series. Defaults to N most recent observations (sort desc).
+ * Pass observationStart (YYYY-MM-DD) to fetch full history from that date instead (sort asc).
  */
-export async function fetchFredSeries(seriesId, limit = 10, apiKey) {
+export async function fetchFredSeries(seriesId, limit = 10, apiKey, observationStart = null) {
   const key = apiKey || process.env.FRED_API_KEY;
   if (!key) return null;
 
   try {
-    const url = `${FRED_BASE}?series_id=${seriesId}&api_key=${key}&file_type=json&sort_order=desc&limit=${limit}`;
+    const params = new URLSearchParams({
+      series_id: seriesId,
+      api_key: key,
+      file_type: 'json',
+    });
+    if (observationStart) {
+      params.set('observation_start', observationStart);
+      params.set('sort_order', 'asc');
+    } else {
+      params.set('sort_order', 'desc');
+      params.set('limit', String(limit));
+    }
+    const url = `${FRED_BASE}?${params.toString()}`;
     const res = await fetch(url, { next: { revalidate: 3600 } }); // cache 1hr
     if (!res.ok) return null;
     const data = await res.json();
@@ -66,10 +79,10 @@ export async function fetchFredSeries(seriesId, limit = 10, apiKey) {
 /**
  * Fetch multiple FRED series in parallel
  */
-export async function fetchMultipleSeries(seriesIds, limit = 5, apiKey) {
+export async function fetchMultipleSeries(seriesIds, limit = 5, apiKey, observationStart = null) {
   const results = {};
   const promises = seriesIds.map(async (id) => {
-    const data = await fetchFredSeries(id, limit, apiKey);
+    const data = await fetchFredSeries(id, limit, apiKey, observationStart);
     results[id] = data;
   });
   await Promise.all(promises);
