@@ -38,7 +38,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('sfm_fred_key') : null;
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('sfm_fred_key')?.trim() : null;
     if (saved) { setInputKey(saved); fetchFred(saved); } else fetchFred('');
     fetchSOFR();
   }, [fetchFred, fetchSOFR]);
@@ -63,8 +63,8 @@ export default function Home() {
       <div style={{ padding: '0 16px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 3, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 1 }}>FRED API</span>
-          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 2, background: fredData?.live ? 'rgba(0,200,83,0.15)' : 'rgba(255,82,82,0.1)', color: fredData?.live ? 'var(--green)' : 'var(--red)' }}>
-            {fredData?.live ? '● LIVE' : '○ DEMO'}
+          <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 2, background: fredLoading ? 'rgba(240,184,0,0.15)' : fredData?.live ? 'rgba(0,200,83,0.15)' : 'rgba(255,82,82,0.1)', color: fredLoading ? 'var(--amber)' : fredData?.live ? 'var(--green)' : 'var(--red)' }}>
+            {fredLoading ? '◌ CONNECTING' : fredData?.live ? '● LIVE' : '○ DEMO'}
           </span>
           <input value={inputKey} onChange={e => setInputKey(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleConnect()}
             placeholder="Enter free FRED API key..." style={{ flex: 1, minWidth: 200, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '5px 8px', fontSize: 11, fontFamily: 'inherit', borderRadius: 2 }} />
