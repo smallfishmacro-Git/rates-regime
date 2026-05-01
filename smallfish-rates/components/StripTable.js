@@ -10,9 +10,7 @@ const YC = {
 };
 const DY = { bg: 'transparent', border: 'var(--border)', accent: 'var(--dim)' };
 function ht(bp,mx){if(bp==null||Math.abs(bp)<0.3)return'transparent';const i=Math.min(Math.abs(bp)/(mx||1),1);return bp>0?`rgba(255,82,82,${(i*.4).toFixed(2)})`:`rgba(0,200,83,${(i*.4).toFixed(2)})`;}
-function ch(bp,mx){if(bp==null)return'transparent';const i=Math.min(Math.abs(bp)/(mx||1),1);return bp>0?`rgba(0,200,83,${(i*.3).toFixed(2)})`:`rgba(255,82,82,${(i*.3).toFixed(2)})`;}
 function bc(bp){return bp==null||Math.abs(bp)<0.3?'var(--dim)':bp>0?'var(--red)':'var(--green)';}
-function cc(bp){return bp==null?'var(--dim)':bp>0?'var(--green)':bp<-1?'var(--red)':'var(--dim)';}
 function fb(bp){if(bp==null)return'—';if(Math.abs(bp)<0.05)return'0.0';return`${bp>0?'+':''}${bp.toFixed(1)}`;}
 function fv(v){if(!v)return'—';if(v>=1e6)return`${(v/1e6).toFixed(1)}M`;if(v>=1e3)return`${Math.round(v/1e3)}K`;return String(v);}
 
@@ -91,7 +89,7 @@ export default function StripTable({strip,sofrLive,sofrLoading,currentSOFR}) {
       <div style={{overflowX:'auto',maxHeight:460,overflowY:'auto'}}>
         <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
           <thead><tr>
-            {['CONTRACT','LAST PX','IMP RATE','BPS CUT','1D bp','5D bp','1M bp','VOLUME'].map((h,i)=>(
+            {['CONTRACT','LAST PX','IMP RATE','vs SPOT','1D bp','5D bp','1M bp','VOLUME'].map((h,i)=>(
               <th key={h} style={{textAlign:i>0?'right':'left',padding:'6px 6px',fontSize:9,color:'var(--dim)',letterSpacing:1,borderBottom:'1px solid var(--border)',position:'sticky',top:0,background:'var(--card)',zIndex:1,whiteSpace:'nowrap'}}>{h}</th>
             ))}
           </tr></thead>
@@ -100,7 +98,7 @@ export default function StripTable({strip,sofrLive,sofrLoading,currentSOFR}) {
               <Fragment key={group.year}>
                 <tr><td colSpan={8} style={{padding:'8px 6px 4px',color:yc.accent,fontWeight:'bold',fontSize:12,borderBottom:`1px solid ${yc.border}`,borderLeft:`3px solid ${yc.accent}`,background:yc.bg}}>{group.year}</td></tr>
                 {group.contracts.map(c=>{
-                  const bps=(sofr0-c.impRate)*100;
+                  const bps=(c.impRate-sofr0)*100;
                   const hasChart=(c.history1y||c.history)&&(c.history1y||c.history).length>5;
                   const volPct=mVol>0?((c.volume||0)/mVol)*100:0;
                   return(
@@ -108,7 +106,7 @@ export default function StripTable({strip,sofrLive,sofrLoading,currentSOFR}) {
                       <td style={{padding:'5px 6px'}}><span style={{color:yc.accent,fontWeight:'bold'}}>{c.ticker}</span><span style={{color:'var(--dim)',marginLeft:5,fontSize:10}}>{c.label}</span>{hasChart&&<span style={{marginLeft:4,fontSize:9}}>📈</span>}</td>
                       <td style={{padding:'5px 6px',textAlign:'right'}}>{c.lastPx?.toFixed(3)||'—'}</td>
                       <td style={{padding:'5px 6px',textAlign:'right',color:'var(--amber)',fontWeight:'bold'}}>{c.impRate?.toFixed(3)||'—'}</td>
-                      <td style={{padding:'5px 6px',textAlign:'right',color:cc(bps),fontWeight:Math.abs(bps)>5?'bold':'normal',background:ch(bps,mCut)}}>{fb(bps)}</td>
+                      <td style={{padding:'5px 6px',textAlign:'right',color:bc(bps),fontWeight:Math.abs(bps)>5?'bold':'normal',background:ht(bps,mCut)}}>{fb(bps)}</td>
                       <td style={{padding:'5px 6px',textAlign:'right',color:bc(c.bp1d),fontWeight:c.bp1d!=null&&Math.abs(c.bp1d)>1?'bold':'normal',background:ht(c.bp1d,m1d)}}>{fb(c.bp1d)}</td>
                       <td style={{padding:'5px 6px',textAlign:'right',color:bc(c.bp5d),fontWeight:c.bp5d!=null&&Math.abs(c.bp5d)>2?'bold':'normal',background:ht(c.bp5d,m5d)}}>{fb(c.bp5d)}</td>
                       <td style={{padding:'5px 6px',textAlign:'right',color:bc(c.bp1m),fontWeight:c.bp1m!=null&&Math.abs(c.bp1m)>3?'bold':'normal',background:ht(c.bp1m,m1m)}}>{fb(c.bp1m)}</td>
@@ -125,8 +123,8 @@ export default function StripTable({strip,sofrLive,sofrLoading,currentSOFR}) {
         </table>
       </div>
       <div style={{marginTop:8,fontSize:9,color:'var(--dim)',display:'flex',gap:10,flexWrap:'wrap'}}>
-        <span>BPS CUT = bps below SOFR spot</span>
-        <span>1D/5D/1M = rate chg in bp (<span style={{color:'var(--green)'}}>green</span>=dovish <span style={{color:'var(--red)'}}>red</span>=hawkish)</span>
+        <span>vs SPOT = contract impRate − SOFR spot in bp (negative = below spot = cuts priced)</span>
+        <span>1D/5D/1M = rate chg in bp | <span style={{color:'var(--green)'}}>green</span>=dovish <span style={{color:'var(--red)'}}>red</span>=hawkish (all bp columns)</span>
         <span>📈 = click for 1Y chart</span>
       </div>
     </div>
