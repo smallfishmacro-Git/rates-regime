@@ -53,8 +53,8 @@ export default function Home() {
   const sofrLive = (sofrResult?.count || 0) > 0;
   const sofrContracts = sofrResult?.contracts || [];
   const strip = sofrResult?.strip?.length ? sofrResult.strip : FALLBACK_STRIP;
-  const meetings = sofrLive ? computeMeetingProbs(sofrContracts, currentEFFR) : FALLBACK_MEETINGS;
-  const terminalRate = meetings[meetings.length - 1]?.impliedRate || 3.27;
+  const meetings = sofrLive ? computeMeetingProbs(sofrContracts, currentSOFR) : FALLBACK_MEETINGS;
+  const terminalRate = meetings[meetings.length - 1]?.impliedRate ?? meetings[meetings.length - 1]?.postMtg ?? 3.27;
   const data = { ...fredData, meetings, strip, sofrLive, sofrCount: sofrResult?.count || 0 };
 
   return (
