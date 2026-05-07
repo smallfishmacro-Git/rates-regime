@@ -5,6 +5,9 @@ on:
     - cron: '30 21 * * 1-5'  # 21:30 UTC Mon-Fri
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -26,9 +29,12 @@ jobs:
         run: python fetch_inflation_swaps.py
 
       - name: Commit and push if data updated
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/smallfishmacro-Git/rates-regime.git
           git add data/inflation_swaps.csv
           git diff --cached --quiet || git commit -m "data: inflation swaps $(date +%F)"
           git push
