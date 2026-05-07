@@ -19,9 +19,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install playwright pandas
-          playwright install chromium --with-deps
+        run: pip install requests pandas
 
       - name: Fetch inflation swaps
         env:

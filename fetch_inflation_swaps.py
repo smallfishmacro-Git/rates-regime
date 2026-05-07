@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """Fetch US 2Y/5Y/10Y inflation swap rates from market-radar.com.
 
-Two modes are supported:
+Two modes:
 
-* **LOCAL** (default): launches a real Chrome window using a dedicated profile
+* **LOCAL** (default): launches Chrome via Playwright with a dedicated profile
   under ``./.chrome-profile``. First run prompts you to sign in; subsequent
-  runs reuse the saved session.
-* **CI** (``MARKET_RADAR_COOKIES`` env var set): launches headless Chromium and
-  injects the JSON cookies from the env var. Designed for GitHub Actions.
+  runs reuse the saved session. Captures the dashboard's combined API
+  response by listening for it in the browser.
 
-In both modes the script listens for the dashboard's combined API response
-(``/api/data?provider=US&series=US2YIS,US5YIS,US10YIS&years=6``) and merges
-the captured payload into ``data/inflation_swaps.csv``.
+* **CI** (``MARKET_RADAR_COOKIES`` env var set): no browser. Reads the
+  Firebase ``api_key`` + ``refresh_token`` exported by ``export_cookies.py``,
+  mints a fresh access token via ``securetoken.googleapis.com``, then GETs
+  ``/api/data`` with a ``Bearer`` header. Designed for GitHub Actions —
+  fast, reliable, no Playwright/headless-Chrome surface area.
+
+In both modes the data is merged into ``data/inflation_swaps.csv``.
 
 A dedicated Chrome profile is required in LOCAL mode because Chrome 136+
 refuses DevTools/CDP access on the default ``User Data`` directory.
@@ -28,9 +31,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pandas as pd
-from playwright.sync_api import sync_playwright
+import requests
 
 DASHBOARD_URL = "https://www.market-radar.com/dashboard/quantbase?workspace=macro-monitor"
+API_URL = "https://www.market-radar.com/api/data"
+TOKEN_REFRESH_URL = "https://securetoken.googleapis.com/v1/token"
 SERIES = ["US2YIS", "US5YIS", "US10YIS"]
 
 ROOT = Path(__file__).resolve().parent
@@ -40,10 +45,7 @@ CHROME_USER_DATA = ROOT / ".chrome-profile"
 COOKIES_ENV = "MARKET_RADAR_COOKIES"
 
 CAPTURE_TIMEOUT_LOCAL_S = 300
-CAPTURE_TIMEOUT_CI_S = 60
 
-# Real Chrome UA — keeps "HeadlessChrome" out of the user-agent so the
-# dashboard doesn't gate the load on a bot check.
 CI_USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -61,38 +63,11 @@ def _matched_series(url: str) -> list[str]:
     return [s.strip() for s in raw.split(",") if s.strip() in SERIES]
 
 
-def _make_response_handler(state: dict, save_debug: Path | None = None):
-    """Build a Playwright response listener that fills ``state['payload']``.
-
-    ``state`` is mutated in place because the listener can't return values.
-    """
-    debug_seen: set[str] = set()
-    debug_f = save_debug.open("w", encoding="utf-8") if save_debug else None
-
-    def on_response(response):
-        if state.get("payload") is not None:
-            return
-        req = response.request
-        if debug_f and req.resource_type in ("xhr", "fetch") and response.url not in debug_seen:
-            debug_seen.add(response.url)
-            debug_f.write(f"{response.status} {response.url}\n")
-            debug_f.flush()
-        matches = _matched_series(response.url)
-        if not matches:
-            return
-        try:
-            state["payload"] = response.json()
-            print(f"  captured {matches} from {response.url}", flush=True)
-        except Exception as exc:
-            print(f"  failed to parse: {exc}", flush=True)
-
-    state["_debug_close"] = (lambda: debug_f.close()) if debug_f else (lambda: None)
-    return on_response
-
-
 def fetch_local() -> dict | None:
-    """LOCAL mode — open Chrome with a dedicated profile, sign-in interactively."""
-    state: dict = {"payload": None}
+    """LOCAL mode — open Chrome with a dedicated profile, capture the API response."""
+    from playwright.sync_api import sync_playwright  # lazy: not needed in CI
+
+    payload: dict | None = None
     first_run = not CHROME_USER_DATA.exists()
     CHROME_USER_DATA.mkdir(parents=True, exist_ok=True)
 
@@ -112,124 +87,105 @@ def fetch_local() -> dict | None:
 
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
         debug_path = CHROME_USER_DATA / "_debug_urls.log"
-        on_response = _make_response_handler(state, save_debug=debug_path)
+        debug_seen: set[str] = set()
+        debug_f = debug_path.open("w", encoding="utf-8")
+
+        def on_response(response):
+            nonlocal payload
+            req = response.request
+            if req.resource_type in ("xhr", "fetch") and response.url not in debug_seen:
+                debug_seen.add(response.url)
+                debug_f.write(f"{response.status} {response.url}\n")
+                debug_f.flush()
+            if payload is not None:
+                return
+            matches = _matched_series(response.url)
+            if not matches:
+                return
+            try:
+                payload = response.json()
+                print(f"  captured {matches} from {response.url}", flush=True)
+            except Exception as exc:
+                print(f"  failed to parse: {exc}", flush=True)
 
         page.on("response", on_response)
         page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
 
         deadline = time.time() + CAPTURE_TIMEOUT_LOCAL_S
-        while time.time() < deadline and state["payload"] is None:
+        while time.time() < deadline and payload is None:
             page.wait_for_timeout(1000)
 
         page.remove_listener("response", on_response)
         ctx.close()
-        state["_debug_close"]()
-        if state["payload"] is None:
-            print(
-                f"\nno matches — XHR URLs dumped to {debug_path}",
-                flush=True,
-            )
+        debug_f.close()
+        if payload is None:
+            print(f"\nno matches — XHR URLs dumped to {debug_path}", flush=True)
 
-    return state["payload"]
+    return payload
 
 
-def _try_click(page, text: str, timeout_ms: int = 4000) -> bool:
-    """Best-effort case-insensitive click on a tab/link by visible text."""
-    try:
-        loc = page.get_by_text(re.compile(re.escape(text), re.I)).first
-        loc.click(timeout=timeout_ms)
-        return True
-    except Exception:
-        return False
+def _refresh_access_token(api_key: str, refresh_token: str) -> str:
+    """Exchange a Firebase refresh token for a fresh access token (~1h lifetime)."""
+    r = requests.post(
+        f"{TOKEN_REFRESH_URL}?key={api_key}",
+        data={"grant_type": "refresh_token", "refresh_token": refresh_token},
+        timeout=30,
+    )
+    if r.status_code != 200:
+        sys.exit(
+            f"firebase refresh failed: HTTP {r.status_code}\n"
+            f"  {r.text[:300]}\n"
+            "  the refresh token may have been revoked — re-run export_cookies.py"
+        )
+    data = r.json()
+    return data["access_token"]
 
 
 def fetch_ci(state_json: str) -> dict | None:
-    """CI mode — headless, inject storage state from env var, no Chrome profile.
-
-    The env var contains a Playwright storage_state JSON
-    (cookies + localStorage). For backward-compat, a bare cookie array is
-    also accepted.
-    """
+    """CI mode — refresh Firebase JWT and call /api/data directly. No browser."""
     try:
-        parsed = json.loads(state_json)
+        state = json.loads(state_json)
     except json.JSONDecodeError as exc:
         sys.exit(f"MARKET_RADAR_COOKIES is not valid JSON: {exc}")
 
-    if isinstance(parsed, list):
-        storage_state = {"cookies": parsed, "origins": []}
-    elif isinstance(parsed, dict) and "cookies" in parsed:
-        storage_state = parsed
-    else:
+    if not isinstance(state, dict):
+        sys.exit("MARKET_RADAR_COOKIES must be a JSON object")
+
+    fb = state.get("firebase") or {}
+    api_key = fb.get("api_key")
+    refresh = fb.get("refresh_token")
+    if not api_key or not refresh:
         sys.exit(
-            "MARKET_RADAR_COOKIES must be a JSON storage_state object "
-            "(with 'cookies' and 'origins') or a cookie array"
+            "MARKET_RADAR_COOKIES missing firebase.api_key or firebase.refresh_token.\n"
+            "  re-run export_cookies.py and update the secret."
         )
 
-    n_cookies = len(storage_state.get("cookies", []))
-    n_ls = sum(len(o.get("localStorage", [])) for o in storage_state.get("origins", []))
-    print(f"CI mode — injecting {n_cookies} cookies + {n_ls} localStorage entries", flush=True)
+    print(
+        f"CI mode — refreshing Firebase token "
+        f"(uid={fb.get('uid', '?')}, email={fb.get('email', '?')})",
+        flush=True,
+    )
+    access_token = _refresh_access_token(api_key, refresh)
+    print(f"  got access token ({len(access_token)} chars)", flush=True)
 
-    state: dict = {"payload": None}
-    deadline = time.time() + CAPTURE_TIMEOUT_CI_S
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        try:
-            ctx = browser.new_context(
-                storage_state=storage_state,
-                user_agent=CI_USER_AGENT,
-                viewport={"width": 1920, "height": 1080},
-                locale="en-US",
-            )
-        except Exception as exc:
-            browser.close()
-            sys.exit(f"failed to apply storage_state: {exc}")
-
-        page = ctx.new_page()
-        on_response = _make_response_handler(state)
-        page.on("response", on_response)
-
-        try:
-            page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
-            page.reload(wait_until="domcontentloaded", timeout=60_000)
-            try:
-                page.wait_for_load_state("networkidle", timeout=25_000)
-            except Exception:
-                print("  networkidle wait timed out, continuing", flush=True)
-
-            print(f"  page title: {page.title()!r}", flush=True)
-            print(f"  page url:   {page.url}", flush=True)
-
-            if _try_click(page, "MACRO MONITOR"):
-                print("  clicked MACRO MONITOR", flush=True)
-                page.wait_for_timeout(1500)
-            else:
-                print("  MACRO MONITOR tab not found (may already be active)", flush=True)
-
-            if _try_click(page, "INFLATION"):
-                print("  clicked INFLATION", flush=True)
-                page.wait_for_timeout(1500)
-            else:
-                print("  INFLATION tab not found", flush=True)
-
-            print("  waiting 15s for API to fire...", flush=True)
-            sub_deadline = time.time() + 15
-            while time.time() < sub_deadline and state["payload"] is None:
-                page.wait_for_timeout(500)
-
-            # remaining slack up to total CAPTURE_TIMEOUT_CI_S
-            while time.time() < deadline and state["payload"] is None:
-                page.wait_for_timeout(500)
-        finally:
-            page.remove_listener("response", on_response)
-            ctx.close()
-            browser.close()
-
-    return state["payload"]
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "User-Agent": CI_USER_AGENT,
+        "Referer": DASHBOARD_URL,
+        "Accept": "application/json",
+    }
+    params = {"provider": "US", "series": ",".join(SERIES), "years": 6}
+    r = requests.get(API_URL, params=params, headers=headers, timeout=60)
+    if r.status_code != 200:
+        sys.exit(
+            f"market-radar API failed: HTTP {r.status_code}\n"
+            f"  {r.text[:300]}"
+        )
+    print(f"  api response 200 ({len(r.content)} bytes)", flush=True)
+    return r.json()
 
 
 def _walk_to_data(payload):
-    """Drill through common wrapper keys until we find series data."""
     body = payload
     for _ in range(4):
         if not isinstance(body, dict):
@@ -282,7 +238,6 @@ def to_dataframe(payload) -> pd.DataFrame:
     if isinstance(body, list) and body and isinstance(body[0], dict):
         cols = set(body[0].keys())
 
-        # long format: rows tagged with series_id + value
         id_col = next((c for c in ("series_id", "series", "id", "name") if c in cols), None)
         val_col = next((c for c in ("value", "v", "close", "rate") if c in cols), None)
         date_col = next((c for c in ("date", "timestamp", "time", "t") if c in cols), None)
@@ -294,7 +249,6 @@ def to_dataframe(payload) -> pd.DataFrame:
             wide.columns.name = None
             return _finalize(wide)
 
-        # wide format: list of dicts with date + series columns
         if any(s in cols for s in SERIES):
             df = pd.DataFrame(body)
             dcol = next(
@@ -305,7 +259,6 @@ def to_dataframe(payload) -> pd.DataFrame:
             df = df[[dcol] + keep].rename(columns={dcol: "date"})
             return _finalize(df)
 
-    # series-keyed dict: {US2YIS: [...], US5YIS: [...], ...}
     if isinstance(body, dict):
         per = {s: body[s] for s in SERIES if s in body}
         if per:
@@ -345,16 +298,12 @@ def save(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    ci_cookies = os.environ.get(COOKIES_ENV)
+    ci_state = os.environ.get(COOKIES_ENV)
 
-    if ci_cookies:
-        payload = fetch_ci(ci_cookies)
+    if ci_state:
+        payload = fetch_ci(ci_state)
         if payload is None:
-            print(
-                f"warning: no API response captured within {CAPTURE_TIMEOUT_CI_S}s — "
-                "exiting cleanly so the workflow doesn't fail",
-                flush=True,
-            )
+            print("warning: no payload captured — exiting cleanly", flush=True)
             sys.exit(0)
     else:
         payload = fetch_local()
