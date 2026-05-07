@@ -1,0 +1,35 @@
+name: Fetch Inflation Swaps
+
+on:
+  schedule:
+    - cron: '30 21 * * 1-5'  # 21:30 UTC Mon-Fri
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install playwright pandas
+          playwright install chromium --with-deps
+
+      - name: Fetch inflation swaps
+        env:
+          MARKET_RADAR_COOKIES: ${{ secrets.MARKET_RADAR_COOKIES }}
+        run: python fetch_inflation_swaps.py
+
+      - name: Commit and push if data updated
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/inflation_swaps.csv
+          git diff --cached --quiet || git commit -m "data: inflation swaps $(date +%F)"
+          git push
+        continue-on-error: true

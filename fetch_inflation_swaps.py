@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """Fetch US 2Y/5Y/10Y inflation swap rates from market-radar.com.
 
-Uses Playwright with a dedicated Chrome profile under the repo. Listens for the
-dashboard's combined API response (the panel calls
-`/api/data?provider=US&series=US2YIS,US5YIS,US10YIS&years=6`) and persists the
-merged series to data/inflation_swaps.csv.
+Two modes are supported:
 
-First run: a Chrome window opens — sign in to market-radar.com once and the
-dashboard will start firing API requests; the script captures them and exits.
-Subsequent runs reuse the saved cookies.
+* **LOCAL** (default): launches a real Chrome window using a dedicated profile
+  under ``./.chrome-profile``. First run prompts you to sign in; subsequent
+  runs reuse the saved session.
+* **CI** (``MARKET_RADAR_COOKIES`` env var set): launches headless Chromium and
+  injects the JSON cookies from the env var. Designed for GitHub Actions.
 
-A dedicated profile is required because Chrome 136+ refuses DevTools/CDP access
-on the default `User Data` directory.
+In both modes the script listens for the dashboard's combined API response
+(``/api/data?provider=US&series=US2YIS,US5YIS,US10YIS&years=6``) and merges
+the captured payload into ``data/inflation_swaps.csv``.
+
+A dedicated Chrome profile is required in LOCAL mode because Chrome 136+
+refuses DevTools/CDP access on the default ``User Data`` directory.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -32,7 +36,10 @@ ROOT = Path(__file__).resolve().parent
 OUTPUT_PATH = ROOT / "data" / "inflation_swaps.csv"
 CHROME_USER_DATA = ROOT / ".chrome-profile"
 
-CAPTURE_TIMEOUT_S = 300
+COOKIES_ENV = "MARKET_RADAR_COOKIES"
+
+CAPTURE_TIMEOUT_LOCAL_S = 300
+CAPTURE_TIMEOUT_CI_S = 30
 
 
 def _matched_series(url: str) -> list[str]:
@@ -46,8 +53,38 @@ def _matched_series(url: str) -> list[str]:
     return [s.strip() for s in raw.split(",") if s.strip() in SERIES]
 
 
-def fetch() -> dict | None:
-    payload: dict | None = None
+def _make_response_handler(state: dict, save_debug: Path | None = None):
+    """Build a Playwright response listener that fills ``state['payload']``.
+
+    ``state`` is mutated in place because the listener can't return values.
+    """
+    debug_seen: set[str] = set()
+    debug_f = save_debug.open("w", encoding="utf-8") if save_debug else None
+
+    def on_response(response):
+        if state.get("payload") is not None:
+            return
+        req = response.request
+        if debug_f and req.resource_type in ("xhr", "fetch") and response.url not in debug_seen:
+            debug_seen.add(response.url)
+            debug_f.write(f"{response.status} {response.url}\n")
+            debug_f.flush()
+        matches = _matched_series(response.url)
+        if not matches:
+            return
+        try:
+            state["payload"] = response.json()
+            print(f"  captured {matches} from {response.url}", flush=True)
+        except Exception as exc:
+            print(f"  failed to parse: {exc}", flush=True)
+
+    state["_debug_close"] = (lambda: debug_f.close()) if debug_f else (lambda: None)
+    return on_response
+
+
+def fetch_local() -> dict | None:
+    """LOCAL mode — open Chrome with a dedicated profile, sign-in interactively."""
+    state: dict = {"payload": None}
     first_run = not CHROME_USER_DATA.exists()
     CHROME_USER_DATA.mkdir(parents=True, exist_ok=True)
 
@@ -66,47 +103,87 @@ def fetch() -> dict | None:
             sys.exit(f"failed to launch Chrome.\n  {exc}")
 
         page = ctx.pages[0] if ctx.pages else ctx.new_page()
-
         debug_path = CHROME_USER_DATA / "_debug_urls.log"
-        debug_seen: set[str] = set()
-        debug_f = debug_path.open("w", encoding="utf-8")
-
-        def on_response(response):
-            nonlocal payload
-            req = response.request
-            if req.resource_type in ("xhr", "fetch") and response.url not in debug_seen:
-                debug_seen.add(response.url)
-                debug_f.write(f"{response.status} {response.url}\n")
-                debug_f.flush()
-
-            if payload is not None:
-                return
-            matches = _matched_series(response.url)
-            if not matches:
-                return
-            try:
-                payload = response.json()
-                print(f"  captured {matches} from {response.url}", flush=True)
-                (CHROME_USER_DATA / "_last_payload.json").write_text(
-                    json.dumps(payload), encoding="utf-8"
-                )
-            except Exception as exc:
-                print(f"  failed to parse: {exc}", flush=True)
+        on_response = _make_response_handler(state, save_debug=debug_path)
 
         page.on("response", on_response)
         page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
 
-        deadline = time.time() + CAPTURE_TIMEOUT_S
-        while time.time() < deadline and payload is None:
+        deadline = time.time() + CAPTURE_TIMEOUT_LOCAL_S
+        while time.time() < deadline and state["payload"] is None:
             page.wait_for_timeout(1000)
 
         page.remove_listener("response", on_response)
         ctx.close()
-        debug_f.close()
-        if payload is None:
-            print(f"\nno matches — dumped {len(debug_seen)} XHR URLs to {debug_path}", flush=True)
+        state["_debug_close"]()
+        if state["payload"] is None:
+            print(
+                f"\nno matches — XHR URLs dumped to {debug_path}",
+                flush=True,
+            )
 
-    return payload
+    return state["payload"]
+
+
+def fetch_ci(state_json: str) -> dict | None:
+    """CI mode — headless, inject storage state from env var, no Chrome profile.
+
+    The env var contains a Playwright storage_state JSON
+    (cookies + localStorage). For backward-compat, a bare cookie array is
+    also accepted.
+    """
+    try:
+        parsed = json.loads(state_json)
+    except json.JSONDecodeError as exc:
+        sys.exit(f"MARKET_RADAR_COOKIES is not valid JSON: {exc}")
+
+    if isinstance(parsed, list):
+        # legacy: just cookies — wrap into storage_state shape
+        storage_state = {"cookies": parsed, "origins": []}
+    elif isinstance(parsed, dict) and "cookies" in parsed:
+        storage_state = parsed
+    else:
+        sys.exit(
+            "MARKET_RADAR_COOKIES must be a JSON storage_state object "
+            "(with 'cookies' and 'origins') or a cookie array"
+        )
+
+    n_cookies = len(storage_state.get("cookies", []))
+    n_ls = sum(len(o.get("localStorage", [])) for o in storage_state.get("origins", []))
+    print(f"CI mode — injecting {n_cookies} cookies + {n_ls} localStorage entries", flush=True)
+
+    state: dict = {"payload": None}
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        try:
+            ctx = browser.new_context(storage_state=storage_state)
+        except Exception as exc:
+            browser.close()
+            sys.exit(f"failed to apply storage_state: {exc}")
+
+        page = ctx.new_page()
+        on_response = _make_response_handler(state)
+        page.on("response", on_response)
+
+        try:
+            page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
+            page.reload(wait_until="domcontentloaded", timeout=60_000)
+            try:
+                page.wait_for_load_state("networkidle", timeout=20_000)
+            except Exception:
+                pass
+            page.wait_for_timeout(8_000)
+
+            deadline = time.time() + CAPTURE_TIMEOUT_CI_S
+            while time.time() < deadline and state["payload"] is None:
+                page.wait_for_timeout(500)
+        finally:
+            page.remove_listener("response", on_response)
+            ctx.close()
+            browser.close()
+
+    return state["payload"]
 
 
 def _walk_to_data(payload):
@@ -226,9 +303,21 @@ def save(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    payload = fetch()
-    if payload is None:
-        sys.exit("no data captured — confirm the dashboard loaded and you're logged in")
+    ci_cookies = os.environ.get(COOKIES_ENV)
+
+    if ci_cookies:
+        payload = fetch_ci(ci_cookies)
+        if payload is None:
+            print(
+                f"warning: no API response captured within {CAPTURE_TIMEOUT_CI_S}s — "
+                "exiting cleanly so the workflow doesn't fail",
+                flush=True,
+            )
+            sys.exit(0)
+    else:
+        payload = fetch_local()
+        if payload is None:
+            sys.exit("no data captured — confirm the dashboard loaded and you're logged in")
 
     df = to_dataframe(payload)
     df = save(df)
