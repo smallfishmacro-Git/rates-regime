@@ -7,6 +7,7 @@ import MeetingsView from '@/components/MeetingsView';
 import StripTable from '@/components/StripTable';
 import SpreadsView from '@/components/SpreadsView';
 import InflationPanel from '@/components/InflationPanel';
+import YieldCurve from '@/components/YieldCurve';
 import StatusBar from '@/components/StatusBar';
 import { fetchAllSOFR, computeMeetingProbs } from '@/lib/sofrClient';
 import { FALLBACK_MEETINGS, FALLBACK_STRIP } from '@/lib/constants';
@@ -93,6 +94,9 @@ export default function Home() {
         </div>
         <InflationPanel data={data} />
       </div>
+
+      <YieldCurve data={data} />
+
       <StatusBar data={data} loading={fredLoading || sofrLoading} sofrLoading={sofrLoading} />
     </div>
   );
