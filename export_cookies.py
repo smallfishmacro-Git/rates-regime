@@ -7,6 +7,10 @@ filename is preserved for the documented GitHub Secret name
 (``MARKET_RADAR_COOKIES``), but the payload is the full storage state since
 market-radar holds its auth token in localStorage.
 
+The script also walks through the dashboard tabs (MACRO MONITOR ->
+INFLATION) before snapshotting, so any localStorage keys written lazily by
+that view are included.
+
 Tries the real Chrome profile first (so brand-new setups still work). On
 Chrome 136+ the default profile rejects CDP access — in that case we fall
 back to the dedicated ``.chrome-profile`` directory used by
@@ -20,6 +24,7 @@ cannot acquire the profile lock.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -50,6 +55,38 @@ def ensure_gitignored(entry: str = "cookies.json") -> None:
         GITIGNORE_PATH.write_text(entry + "\n", encoding="utf-8")
 
 
+def try_click(page, text: str, timeout_ms: int = 4000) -> bool:
+    """Best-effort case-insensitive click on a tab/link by visible text."""
+    try:
+        loc = page.get_by_text(re.compile(re.escape(text), re.I)).first
+        loc.click(timeout=timeout_ms)
+        return True
+    except Exception:
+        return False
+
+
+def warm_up(page) -> None:
+    """Walk the dashboard so any lazy localStorage gets populated."""
+    try:
+        page.wait_for_load_state("networkidle", timeout=20_000)
+    except Exception:
+        pass
+
+    if try_click(page, "MACRO MONITOR"):
+        print("  clicked MACRO MONITOR")
+        page.wait_for_timeout(1500)
+    else:
+        print("  MACRO MONITOR tab not found (may already be active)")
+
+    if try_click(page, "INFLATION"):
+        print("  clicked INFLATION")
+        page.wait_for_timeout(1500)
+    else:
+        print("  INFLATION tab not found")
+
+    page.wait_for_timeout(8_000)
+
+
 def export_with_profile(profile_dir: str) -> dict | None:
     """Launch Chrome with the given persistent profile and return market-radar storage state."""
     with sync_playwright() as p:
@@ -61,12 +98,11 @@ def export_with_profile(profile_dir: str) -> dict | None:
         try:
             page = ctx.pages[0] if ctx.pages else ctx.new_page()
             page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
-            page.wait_for_timeout(8_000)
+            warm_up(page)
             state = ctx.storage_state()
         finally:
             ctx.close()
 
-    # Filter to market-radar.com only
     state["cookies"] = [
         c for c in state.get("cookies", [])
         if COOKIE_DOMAIN_NEEDLE in c.get("domain", "")
@@ -115,6 +151,11 @@ def main() -> None:
         print(
             f"\nsaved {n_cookies} cookies + {n_ls} localStorage entries -> {COOKIES_PATH}"
         )
+        # log keys (no values) so the user can sanity-check
+        for o in state.get("origins", []):
+            for ls in o.get("localStorage", []):
+                v = ls.get("value", "")
+                print(f"  localStorage[{ls['name']}]  ({len(v)} chars)")
         print("Done. Copy the contents of cookies.json into GitHub Secret MARKET_RADAR_COOKIES")
         return
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -39,7 +40,14 @@ CHROME_USER_DATA = ROOT / ".chrome-profile"
 COOKIES_ENV = "MARKET_RADAR_COOKIES"
 
 CAPTURE_TIMEOUT_LOCAL_S = 300
-CAPTURE_TIMEOUT_CI_S = 30
+CAPTURE_TIMEOUT_CI_S = 60
+
+# Real Chrome UA — keeps "HeadlessChrome" out of the user-agent so the
+# dashboard doesn't gate the load on a bot check.
+CI_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
 
 
 def _matched_series(url: str) -> list[str]:
@@ -125,6 +133,16 @@ def fetch_local() -> dict | None:
     return state["payload"]
 
 
+def _try_click(page, text: str, timeout_ms: int = 4000) -> bool:
+    """Best-effort case-insensitive click on a tab/link by visible text."""
+    try:
+        loc = page.get_by_text(re.compile(re.escape(text), re.I)).first
+        loc.click(timeout=timeout_ms)
+        return True
+    except Exception:
+        return False
+
+
 def fetch_ci(state_json: str) -> dict | None:
     """CI mode — headless, inject storage state from env var, no Chrome profile.
 
@@ -138,7 +156,6 @@ def fetch_ci(state_json: str) -> dict | None:
         sys.exit(f"MARKET_RADAR_COOKIES is not valid JSON: {exc}")
 
     if isinstance(parsed, list):
-        # legacy: just cookies — wrap into storage_state shape
         storage_state = {"cookies": parsed, "origins": []}
     elif isinstance(parsed, dict) and "cookies" in parsed:
         storage_state = parsed
@@ -153,11 +170,17 @@ def fetch_ci(state_json: str) -> dict | None:
     print(f"CI mode — injecting {n_cookies} cookies + {n_ls} localStorage entries", flush=True)
 
     state: dict = {"payload": None}
+    deadline = time.time() + CAPTURE_TIMEOUT_CI_S
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         try:
-            ctx = browser.new_context(storage_state=storage_state)
+            ctx = browser.new_context(
+                storage_state=storage_state,
+                user_agent=CI_USER_AGENT,
+                viewport={"width": 1920, "height": 1080},
+                locale="en-US",
+            )
         except Exception as exc:
             browser.close()
             sys.exit(f"failed to apply storage_state: {exc}")
@@ -170,12 +193,31 @@ def fetch_ci(state_json: str) -> dict | None:
             page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=60_000)
             page.reload(wait_until="domcontentloaded", timeout=60_000)
             try:
-                page.wait_for_load_state("networkidle", timeout=20_000)
+                page.wait_for_load_state("networkidle", timeout=25_000)
             except Exception:
-                pass
-            page.wait_for_timeout(8_000)
+                print("  networkidle wait timed out, continuing", flush=True)
 
-            deadline = time.time() + CAPTURE_TIMEOUT_CI_S
+            print(f"  page title: {page.title()!r}", flush=True)
+            print(f"  page url:   {page.url}", flush=True)
+
+            if _try_click(page, "MACRO MONITOR"):
+                print("  clicked MACRO MONITOR", flush=True)
+                page.wait_for_timeout(1500)
+            else:
+                print("  MACRO MONITOR tab not found (may already be active)", flush=True)
+
+            if _try_click(page, "INFLATION"):
+                print("  clicked INFLATION", flush=True)
+                page.wait_for_timeout(1500)
+            else:
+                print("  INFLATION tab not found", flush=True)
+
+            print("  waiting 15s for API to fire...", flush=True)
+            sub_deadline = time.time() + 15
+            while time.time() < sub_deadline and state["payload"] is None:
+                page.wait_for_timeout(500)
+
+            # remaining slack up to total CAPTURE_TIMEOUT_CI_S
             while time.time() < deadline and state["payload"] is None:
                 page.wait_for_timeout(500)
         finally:
