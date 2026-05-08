@@ -31,12 +31,12 @@ const SPREADS = [
 const RANGES = ['1M', '3M', '6M', 'YTD', '1Y', '2Y', 'ALL'];
 
 const REGIME_COLOR = {
-  'BULL STEEPENER':  '#26A69A',
-  'BEAR STEEPENER':  '#EF5350',
-  'STEEPENER TWIST': '#66BB6A',
-  'BULL FLATTENER':  '#EF9A9A',
-  'BEAR FLATTENER':  '#1565C0',
-  'FLATTENER TWIST': '#9E9E9E',
+  'BULL STEEPENER':  '#2962FF',
+  'BEAR STEEPENER':  '#FF6D00',
+  'STEEPENER TWIST': '#2E7D32',
+  'BULL FLATTENER':  '#D50000',
+  'BEAR FLATTENER':  '#6A1B9A',
+  'FLATTENER TWIST': '#795548',
   'FLAT':            '#3a3a3a',
 };
 
@@ -335,13 +335,20 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
         )}
 
         {/* B) Regime badge */}
-        <div style={{
-          background: `${color}1f`, color, border: `1px solid ${color}`,
-          padding: '8px 10px', borderRadius: 2, fontSize: 12,
-          letterSpacing: 1.5, fontWeight: 'bold', textAlign: 'center',
-        }}>
-          {regimeNow || '—'}
-        </div>
+        {(() => {
+          const rc = REGIME_COLOR[regimeNow] || 'var(--dim)';
+          return (
+            <div style={{
+              background: regimeNow ? `${rc}26` : 'var(--bg)',
+              color: rc,
+              border: `1px solid ${rc}`,
+              padding: '8px 10px', borderRadius: 2, fontSize: 12,
+              letterSpacing: 1.5, fontWeight: 'bold', textAlign: 'center',
+            }}>
+              {regimeNow || '—'}
+            </div>
+          );
+        })()}
 
         {/* C) Spread chart */}
         <ChartBlock
@@ -488,7 +495,7 @@ function Chart({ data, color, unit }) {
         points={`${scaleX(0)},${scaleY(minV)} ${pts} ${scaleX(data.length - 1)},${scaleY(minV)}`}
         fill={`url(#${fillId})`}
       />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1} />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={0.5} />
 
       <circle cx={scaleX(data.length - 1)} cy={scaleY(last.v)} r={2.6} fill={color} />
       <text x={scaleX(data.length - 1) - 4} y={scaleY(last.v) - 5}
@@ -785,7 +792,7 @@ function ChartExpandModal({ column, kind, initialId, history, onClose }) {
                   type="monotone"
                   dataKey="v"
                   stroke={color}
-                  strokeWidth={1}
+                  strokeWidth={0.5}
                   dot={false}
                   activeDot={{ r: 4, fill: color, stroke: '#0a0a0a', strokeWidth: 1 }}
                   isAnimationActive={false}
