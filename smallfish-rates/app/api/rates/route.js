@@ -5,6 +5,11 @@ import fs from 'fs/promises';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+};
 
 const TENORS = ['1Y', '2Y', '5Y', '10Y', '30Y'];
 const EMPTY_YC = { nominal: {}, real: {}, swaps: {}, history: [] };
@@ -144,7 +149,7 @@ export async function GET(request) {
       cpi: FALLBACK_CPI,
       dotPlot: DOT_PLOT,
       yieldCurve,
-    });
+    }, { headers: NO_CACHE_HEADERS });
   }
 
   try {
@@ -190,13 +195,13 @@ export async function GET(request) {
       corePce: cpiData?.PCEPILFE ? computeInflationYoY(cpiData.PCEPILFE) : [],
       dotPlot: DOT_PLOT,
       yieldCurve,
-    });
+    }, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error('[FRED] error:', error);
     return NextResponse.json({
       live: false, error: error.message, lastUpdate: new Date().toISOString(),
       rates: FALLBACK_RATES, cpi: FALLBACK_CPI, dotPlot: DOT_PLOT,
       yieldCurve: EMPTY_YC,
-    });
+    }, { headers: NO_CACHE_HEADERS });
   }
 }
