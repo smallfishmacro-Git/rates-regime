@@ -9,21 +9,29 @@ export const dynamic = 'force-dynamic';
 const TENORS = ['1Y', '2Y', '5Y', '10Y', '30Y'];
 const EMPTY_YC = { nominal: {}, real: {}, swaps: {}, history: [] };
 
-async function readInflationSwapsCsv() {
+async function readCsv(filename, parser) {
   const candidates = [
-    path.join(process.cwd(), 'public', 'data', 'inflation_swaps.csv'),
-    path.join(process.cwd(), 'data', 'inflation_swaps.csv'),
-    path.join(process.cwd(), '..', 'data', 'inflation_swaps.csv'),
+    path.join(process.cwd(), 'public', 'data', filename),
+    path.join(process.cwd(), 'data', filename),
+    path.join(process.cwd(), '..', 'data', filename),
   ];
   for (const p of candidates) {
     try {
       const txt = await fs.readFile(p, 'utf8');
-      console.log(`[YC] inflation_swaps.csv read from: ${p} (${txt.length} bytes)`);
-      return parseInflationSwapsCsv(txt);
+      console.log(`[YC] ${filename} read from: ${p} (${txt.length} bytes)`);
+      return parser(txt);
     } catch {}
   }
-  console.warn('[YC] inflation_swaps.csv NOT FOUND in any candidate path:', candidates);
+  console.warn(`[YC] ${filename} NOT FOUND in any candidate path:`, candidates);
   return [];
+}
+
+function readInflationSwapsCsv() {
+  return readCsv('inflation_swaps.csv', parseInflationSwapsCsv);
+}
+
+function readNominalYieldsCsv() {
+  return readCsv('nominal_yields.csv', parseNominalYieldsCsv);
 }
 
 function parseInflationSwapsCsv(text) {
@@ -41,42 +49,55 @@ function parseInflationSwapsCsv(text) {
   return out;
 }
 
-function buildYieldCurve(rateData, swaps) {
+function parseNominalYieldsCsv(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const out = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    if (cols.length < 5) continue;
+    const [date, us2, us5, us10, us30] = cols;
+    const n2 = parseFloat(us2), n5 = parseFloat(us5),
+          n10 = parseFloat(us10), n30 = parseFloat(us30);
+    if (isFinite(n2) && isFinite(n5) && isFinite(n10) && isFinite(n30)) {
+      out.push({ date, us2y: n2, us5y: n5, us10y: n10, us30y: n30 });
+    }
+  }
+  return out;
+}
+
+function buildYieldCurve(rateData, swaps, yields) {
   const toMap = (arr) => {
     const m = new Map();
     if (Array.isArray(arr)) for (const o of arr) m.set(o.date, o.value);
     return m;
   };
-  const dgs1  = toMap(rateData?.DGS1);
-  const dgs2  = toMap(rateData?.DGS2);
-  const dgs5  = toMap(rateData?.DGS5);
-  const dgs10 = toMap(rateData?.DGS10);
-  const dgs30 = toMap(rateData?.DGS30);
+  const dgs1   = toMap(rateData?.DGS1);
   const dfii30 = toMap(rateData?.DFII30);
 
-  console.log('[YC] FRED series sizes:',
-    `DGS1=${dgs1.size}`, `DGS2=${dgs2.size}`, `DGS5=${dgs5.size}`, `DGS10=${dgs10.size}`,
-    `DGS30=${dgs30.size}`, `DFII30=${dfii30.size}`, `swaps=${swaps.length}`);
+  const yieldsMap = new Map();
+  for (const y of yields) yieldsMap.set(y.date, y);
+
+  console.log('[YC] sources:',
+    `DGS1=${dgs1.size}`, `DFII30=${dfii30.size}`,
+    `nominal_yields=${yields.length}`, `swaps=${swaps.length}`);
 
   const history = [];
   for (const s of swaps) {
     const date = s.date;
+    const y = yieldsMap.get(date);
+    if (!y) continue;  // need market-radar nominal yields
     const n1 = dgs1.get(date);
-    const n2 = dgs2.get(date);
-    const n5 = dgs5.get(date);
-    const n10 = dgs10.get(date);
-    const n30 = dgs30.get(date);
     const r30 = dfii30.get(date);
-    if (n2 == null || n5 == null || n10 == null || n30 == null || r30 == null) continue;
     history.push({
       date,
       n1y: n1 ?? null,
-      n2y: n2, n5y: n5, n10y: n10, n30y: n30,
-      i2y: s.us2yis, i5y: s.us5yis, i10y: s.us10yis, i30y: n30 - r30,
-      r2y: n2 - s.us2yis,
-      r5y: n5 - s.us5yis,
-      r10y: n10 - s.us10yis,
-      r30y: r30,
+      n2y: y.us2y, n5y: y.us5y, n10y: y.us10y, n30y: y.us30y,
+      i2y: s.us2yis, i5y: s.us5yis, i10y: s.us10yis,
+      i30y: (r30 != null) ? (y.us30y - r30) : null,
+      r2y: y.us2y - s.us2yis,
+      r5y: y.us5y - s.us5yis,
+      r10y: y.us10y - s.us10yis,
+      r30y: r30 ?? null,
     });
   }
 
@@ -108,10 +129,13 @@ export async function GET(request) {
   // Even without a FRED key, try to read the swaps CSV so the inflation column
   // can render something. Nominal & real require FRED.
   if (!apiKey) {
-    console.log('[YC] no FRED key — returning fallback (CSV-only swaps if available)');
-    const swaps = await readInflationSwapsCsv();
-    const yieldCurve = swaps.length
-      ? buildYieldCurve({}, swaps)
+    console.log('[YC] no FRED key — returning fallback (CSV-only data if available)');
+    const [swaps, yields] = await Promise.all([
+      readInflationSwapsCsv(),
+      readNominalYieldsCsv(),
+    ]);
+    const yieldCurve = (swaps.length && yields.length)
+      ? buildYieldCurve({}, swaps, yields)
       : EMPTY_YC;
     return NextResponse.json({
       live: false,
@@ -132,21 +156,29 @@ export async function GET(request) {
       'T5YIE', 'T10YIE', 'T5YIFR', 'DFII10',
     ];
 
-    const [rateData, cpiData, ycRateData, swaps] = await Promise.all([
+    const [rateData, cpiData, ycRateData, swaps, yields] = await Promise.all([
       fetchMultipleSeries(rateSeries, 5, apiKey),
       // Full history from CPIAUCSL inception (1947-01) — series with later starts
       // (CPILFESL 1957, PCEPI/PCEPILFE 1959) just return their available range.
       fetchMultipleSeries(['CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE'], 5, apiKey, '1947-01-01'),
-      fetchMultipleSeries(['DGS1', 'DGS2', 'DGS5', 'DGS10', 'DGS30', 'DFII30'], 5, apiKey, '2020-01-01'),
+      fetchMultipleSeries(['DGS1', 'DFII30'], 5, apiKey, '2020-01-01'),
       readInflationSwapsCsv(),
+      readNominalYieldsCsv(),
     ]);
 
     const rates = {};
     for (const [key, obs] of Object.entries(rateData)) {
       rates[key] = obs?.[0]?.value ?? FALLBACK_RATES[key] ?? null;
     }
+    const latestYield = yields[yields.length - 1];
+    if (latestYield) {
+      rates.DGS2 = latestYield.us2y;
+      rates.DGS5 = latestYield.us5y;
+      rates.DGS10 = latestYield.us10y;
+      rates.DGS30 = latestYield.us30y;
+    }
 
-    const yieldCurve = buildYieldCurve(ycRateData, swaps);
+    const yieldCurve = buildYieldCurve(ycRateData, swaps, yields);
 
     return NextResponse.json({
       live: true,
