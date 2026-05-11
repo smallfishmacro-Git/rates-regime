@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchMultipleSeries, computeInflationYoY } from '@/lib/fred';
 import { FALLBACK_RATES, FALLBACK_CPI, DOT_PLOT } from '@/lib/constants';
-import fs from 'fs/promises';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,32 +9,36 @@ const NO_CACHE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
+const INFLATION_SWAPS_URL =
+  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/inflation_swaps.csv';
+const NOMINAL_YIELDS_URL =
+  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/nominal_yields.csv';
+
 const TENORS = ['1Y', '2Y', '5Y', '10Y', '30Y'];
 const EMPTY_YC = { nominal: {}, real: {}, swaps: {}, history: [] };
 
-async function readCsv(filename, parser) {
-  const candidates = [
-    path.join(process.cwd(), 'public', 'data', filename),
-    path.join(process.cwd(), 'data', filename),
-    path.join(process.cwd(), '..', 'data', filename),
-  ];
-  for (const p of candidates) {
-    try {
-      const txt = await fs.readFile(p, 'utf8');
-      console.log(`[YC] ${filename} read from: ${p} (${txt.length} bytes)`);
-      return parser(txt);
-    } catch {}
+async function fetchCsv(url, parser) {
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) {
+      console.warn(`[YC] ${url} -> HTTP ${res.status}`);
+      return [];
+    }
+    const text = await res.text();
+    console.log(`[YC] fetched ${url} (${text.length} bytes)`);
+    return parser(text);
+  } catch (err) {
+    console.warn(`[YC] failed to fetch ${url}:`, err.message);
+    return [];
   }
-  console.warn(`[YC] ${filename} NOT FOUND in any candidate path:`, candidates);
-  return [];
 }
 
 function readInflationSwapsCsv() {
-  return readCsv('inflation_swaps.csv', parseInflationSwapsCsv);
+  return fetchCsv(INFLATION_SWAPS_URL, parseInflationSwapsCsv);
 }
 
 function readNominalYieldsCsv() {
-  return readCsv('nominal_yields.csv', parseNominalYieldsCsv);
+  return fetchCsv(NOMINAL_YIELDS_URL, parseNominalYieldsCsv);
 }
 
 function parseInflationSwapsCsv(text) {
