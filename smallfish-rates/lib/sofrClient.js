@@ -89,8 +89,12 @@ export function computeMeetingProbs(sofrContracts, currentSOFR) {
   const results = [];
   let cumChangeBp = 0;
 
-  for (let i = 0; i < FOMC_MEETINGS.length; i++) {
-    const m = FOMC_MEETINGS[i];
+  // Drop meetings whose date has already passed so they fall off the list automatically.
+  const today = new Date().toISOString().slice(0, 10);
+  const futureMeetings = FOMC_MEETINGS.filter(m => m.date >= today);
+
+  for (let i = 0; i < futureMeetings.length; i++) {
+    const m = futureMeetings[i];
     const mDate = new Date(m.date);
 
     // Rate going INTO this meeting = post-meeting rate of previous, or spot

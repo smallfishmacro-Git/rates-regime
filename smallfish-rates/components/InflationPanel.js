@@ -11,7 +11,10 @@ export default function InflationPanel({ data }) {
   const [rangeFilter, setRangeFilter] = useState('2Y');
   const [projectionType, setProjectionType] = useState('MOM_YOY');
 
-  const rates = { ...FALLBACK_RATES, ...data?.rates };
+  // Null-safe merge: an explicit null/undefined from FRED must not clobber the
+  // fallback, so KEY RATES / BREAKEVEN values never render as "—".
+  const rates = { ...FALLBACK_RATES };
+  for (const [k, v] of Object.entries(data?.rates || {})) if (v != null) rates[k] = v;
 
   let fullData = data?.cpi || [];
   if (fvTab === 'CORE CPI' && data?.coreCpi?.length) fullData = data.coreCpi;

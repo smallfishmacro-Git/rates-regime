@@ -111,6 +111,17 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
     return (vb - va) * 100;
   };
 
+  // Last-observation-carried-forward: if the latest day is missing a tenor
+  // (e.g. 30Y real/swap when DFII30 hasn't posted yet), fall back to the most
+  // recent non-null value and flag it stale so the tile can show "(prev)".
+  const getCarried = (t) => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const v = getVal(history[i], t);
+      if (v != null) return { v, stale: i !== history.length - 1 };
+    }
+    return { v: null, stale: false };
+  };
+
   const validSpreads = useMemo(() => {
     return SPREADS.filter(([, a, b]) => {
       const v = getSpread(latest, a, b);
@@ -189,7 +200,7 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
         <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1.5, marginBottom: 6 }}>OUTRIGHTS</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
           {TENORS.map(t => {
-            const v = getVal(latest, t);
+            const { v, stale } = getCarried(t);
             const active = tenor === t;
             const disabled = v == null;
             return (
@@ -214,6 +225,9 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
                 }}>
                   {v != null ? v.toFixed(2) : '—'}
                 </span>
+                {stale && v != null && (
+                  <span style={{ fontSize: 7, color: 'var(--dim)', letterSpacing: 0.5, marginTop: 1 }}>(prev)</span>
+                )}
               </button>
             );
           })}

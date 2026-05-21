@@ -2,16 +2,9 @@
 
 import { useState } from 'react';
 
-const MAIN_TABS = ['RATES REGIME', 'BUY THE DIP', 'MARKET RISK'];
 const SUB_TABS = ['DASHBOARD', 'REGIME MAP', 'CROSS-ASSET', 'EQUITIES', 'NEWS', 'BRIEFING'];
 
-const EXTERNAL_LINKS = {
-  'BUY THE DIP': 'https://smallfish-btd.vercel.app/',
-  'MARKET RISK': 'https://smallfish-market-risk.vercel.app/',
-};
-
 export default function Header() {
-  const [activeMain] = useState('RATES REGIME');
   const [activeSub, setActiveSub] = useState('DASHBOARD');
 
   const now = new Date();
@@ -61,36 +54,6 @@ export default function Header() {
             REFRESH
           </button>
         </div>
-      </div>
-
-      {/* Main nav tabs */}
-      <div style={{
-        display: 'flex', gap: 0, borderBottom: '1px solid var(--border)',
-        padding: '6px 0',
-      }}>
-        {MAIN_TABS.map((tab) => {
-          const isActive = tab === activeMain;
-          const isExternal = EXTERNAL_LINKS[tab];
-          return (
-            <a
-              key={tab}
-              href={isExternal || '#'}
-              target={isExternal ? '_blank' : undefined}
-              rel={isExternal ? 'noopener noreferrer' : undefined}
-              style={{
-                fontSize: 11, padding: '6px 20px', letterSpacing: 1.5,
-                color: isActive ? 'var(--amber)' : 'var(--dim)',
-                borderBottom: isActive ? '2px solid var(--amber)' : '2px solid transparent',
-                textDecoration: 'none', cursor: 'pointer',
-                fontWeight: isActive ? 'bold' : 'normal',
-                transition: 'all 0.2s',
-              }}
-            >
-              {tab}
-              {isExternal && <span style={{ fontSize: 8, marginLeft: 4, opacity: 0.5 }}>↗</span>}
-            </a>
-          );
-        })}
       </div>
 
       {/* Sub nav tabs */}

@@ -3,7 +3,10 @@
 import { FALLBACK_RATES } from '@/lib/constants';
 
 export default function SpreadsView({ rates }) {
-  const r = { ...FALLBACK_RATES, ...rates };
+  // Null-safe merge: an explicit null/undefined from FRED (e.g. a tenor missing
+  // for the latest day) must not clobber the fallback, so nothing renders as "—".
+  const r = { ...FALLBACK_RATES };
+  for (const [k, v] of Object.entries(rates || {})) if (v != null) r[k] = v;
 
   const spreads = [
     { label: '2s10s', value: Math.round((r.DGS10 - r.DGS2) * 100), desc: 'DGS10 − DGS2' },
