@@ -16,10 +16,6 @@ const COLUMNS = [
 const TENORS = ['2Y', '5Y', '10Y', '30Y'];
 
 const SPREADS = [
-  ['1s2s',   '1Y',  '2Y'],
-  ['1s5s',   '1Y',  '5Y'],
-  ['1s10s',  '1Y',  '10Y'],
-  ['1s30s',  '1Y',  '30Y'],
   ['2s5s',   '2Y',  '5Y'],
   ['2s10s',  '2Y',  '10Y'],
   ['2s30s',  '2Y',  '30Y'],
@@ -122,12 +118,25 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
     return { v: null, stale: false };
   };
 
+  // Walk back to the most recent day where BOTH legs exist, so 30Y real/swap
+  // spreads survive DFII30's 1-2 day FRED lag behind the market-radar data.
+  const getCarriedSpread = (a, b) => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const va = getVal(history[i], a);
+      const vb = getVal(history[i], b);
+      if (va != null && vb != null) {
+        return { v: (vb - va) * 100, stale: i !== history.length - 1 };
+      }
+    }
+    return { v: null, stale: false };
+  };
+
   const validSpreads = useMemo(() => {
     return SPREADS.filter(([, a, b]) => {
-      const v = getSpread(latest, a, b);
+      const { v } = getCarriedSpread(a, b);
       return v != null && !isNaN(v) && v !== 0;
     });
-  }, [latest, prefix]);
+  }, [history, prefix]);
 
   const cols = Math.max(1, Math.ceil(validSpreads.length / 2));
 
@@ -182,10 +191,10 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
     [history, visStart, visEnd]
   );
 
-  // Current value of selected spread (latest)
+  // Current value of selected spread (carried to most recent both-legs day)
   const selectedSpreadSpec = SPREADS.find(s => s[0] === effectiveSpread);
   const selectedSpreadVal = selectedSpreadSpec
-    ? getSpread(latest, selectedSpreadSpec[1], selectedSpreadSpec[2])
+    ? getCarriedSpread(selectedSpreadSpec[1], selectedSpreadSpec[2]).v
     : null;
 
   return (
@@ -240,7 +249,7 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
         {validSpreads.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 3 }}>
             {validSpreads.map(([sid, a, b]) => {
-              const v = getSpread(latest, a, b);
+              const { v, stale } = getCarriedSpread(a, b);
               const valColor = v >= 0 ? 'var(--green)' : 'var(--red)';
               return (
                 <div
@@ -254,6 +263,7 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
                   <span style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 0.3 }}>{sid}</span>
                   <span style={{ fontSize: 13, color: valColor, fontWeight: 'bold', marginTop: 2 }}>
                     {`${v >= 0 ? '+' : ''}${v.toFixed(0)}`}
+                    {stale && <span style={{ fontSize: 7, color: 'var(--dim)', fontWeight: 'normal' }}> *</span>}
                   </span>
                 </div>
               );
@@ -627,17 +637,31 @@ function ChartExpandModal({ column, kind, initialId, history, onClose }) {
     if (va == null || vb == null) return null;
     return (vb - va) * 100;
   };
+  const carriedVal = (t) => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const v = getVal(history[i], t);
+      if (v != null) return v;
+    }
+    return null;
+  };
+  const carriedSpread = (a, b) => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      const va = getVal(history[i], a), vb = getVal(history[i], b);
+      if (va != null && vb != null) return (vb - va) * 100;
+    }
+    return null;
+  };
 
   const pills = useMemo(() => {
     if (kind === 'tenor') {
       return TENORS
-        .map(t => ({ id: t, value: getVal(latest, t) }))
+        .map(t => ({ id: t, value: carriedVal(t) }))
         .filter(p => p.value != null && !isNaN(p.value));
     }
     return SPREADS
-      .map(([sid, a, b]) => ({ id: sid, value: getSpread(latest, a, b) }))
+      .map(([sid, a, b]) => ({ id: sid, value: carriedSpread(a, b) }))
       .filter(p => p.value != null && !isNaN(p.value) && p.value !== 0);
-  }, [kind, prefix, latest]);
+  }, [kind, prefix, history]);
 
   const fullData = useMemo(() => {
     if (kind === 'tenor') {
