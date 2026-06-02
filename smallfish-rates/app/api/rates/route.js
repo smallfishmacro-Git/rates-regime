@@ -1,45 +1,54 @@
 import { NextResponse } from 'next/server';
-import { fetchMultipleSeries, computeInflationYoY } from '@/lib/fred';
+import { computeInflationYoY } from '@/lib/fred';
 import { FALLBACK_RATES, FALLBACK_CPI, DOT_PLOT } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const NO_CACHE_HEADERS = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate',
-};
+const NO_CACHE_HEADERS = { 'Cache-Control': 'no-store, no-cache, must-revalidate' };
 
+const FRED_JSON_URL =
+  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/fred.json';
 const INFLATION_SWAPS_URL =
   'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/inflation_swaps.csv';
 const NOMINAL_YIELDS_URL =
   'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/nominal_yields.csv';
 
-const TENORS = ['1Y', '2Y', '5Y', '10Y', '30Y'];
 const EMPTY_YC = { nominal: {}, real: {}, swaps: {}, history: [] };
+
+const RATE_SERIES = [
+  'EFFR', 'SOFR', 'DFEDTARU', 'DFEDTARL',
+  'DGS1MO', 'DGS3MO', 'DGS6MO', 'DGS1', 'DGS2', 'DGS3',
+  'DGS5', 'DGS7', 'DGS10', 'DGS20', 'DGS30',
+  'T10Y2Y', 'T10Y3M',
+  'T5YIE', 'T10YIE', 'T5YIFR', 'DFII10',
+];
 
 async function fetchCsv(url, parser) {
   try {
     const res = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) {
-      console.warn(`[YC] ${url} -> HTTP ${res.status}`);
-      return [];
-    }
-    const text = await res.text();
-    console.log(`[YC] fetched ${url} (${text.length} bytes)`);
-    return parser(text);
+    if (!res.ok) { console.warn(`[rates] ${url} -> HTTP ${res.status}`); return []; }
+    return parser(await res.text());
   } catch (err) {
-    console.warn(`[YC] failed to fetch ${url}:`, err.message);
+    console.warn(`[rates] failed to fetch ${url}:`, err.message);
     return [];
   }
 }
 
-function readInflationSwapsCsv() {
-  return fetchCsv(INFLATION_SWAPS_URL, parseInflationSwapsCsv);
+async function readFredJson() {
+  try {
+    const res = await fetch(FRED_JSON_URL, { cache: 'no-store' });
+    if (!res.ok) { console.warn(`[rates] fred.json -> HTTP ${res.status}`); return null; }
+    const data = await res.json();
+    return data?.series ? data : null;
+  } catch (err) {
+    console.warn('[rates] failed to fetch fred.json:', err.message);
+    return null;
+  }
 }
 
-function readNominalYieldsCsv() {
-  return fetchCsv(NOMINAL_YIELDS_URL, parseNominalYieldsCsv);
-}
+const readInflationSwapsCsv = () => fetchCsv(INFLATION_SWAPS_URL, parseInflationSwapsCsv);
+const readNominalYieldsCsv  = () => fetchCsv(NOMINAL_YIELDS_URL, parseNominalYieldsCsv);
 
 function parseInflationSwapsCsv(text) {
   const lines = text.trim().split(/\r?\n/);
@@ -84,19 +93,14 @@ function buildYieldCurve(rateData, swaps, yields) {
   const yieldsMap = new Map();
   for (const y of yields) yieldsMap.set(y.date, y);
 
-  console.log('[YC] sources:',
-    `DGS1=${dgs1.size}`, `DFII30=${dfii30.size}`,
-    `nominal_yields=${yields.length}`, `swaps=${swaps.length}`);
-
   const history = [];
   for (const s of swaps) {
-    const date = s.date;
-    const y = yieldsMap.get(date);
-    if (!y) continue;  // need market-radar nominal yields
-    const n1 = dgs1.get(date);
-    const r30 = dfii30.get(date);
+    const y = yieldsMap.get(s.date);
+    if (!y) continue;
+    const n1 = dgs1.get(s.date);
+    const r30 = dfii30.get(s.date);
     history.push({
-      date,
+      date: s.date,
       n1y: n1 ?? null,
       n2y: y.us2y, n5y: y.us5y, n10y: y.us10y, n30y: y.us30y,
       i2y: s.us2yis, i5y: s.us5yis, i10y: s.us10yis,
@@ -108,11 +112,6 @@ function buildYieldCurve(rateData, swaps, yields) {
     });
   }
 
-  console.log(`[YC] merged history length: ${history.length}`);
-  if (history.length) {
-    console.log(`[YC] first: ${history[0].date}, last: ${history[history.length - 1].date}`);
-  }
-
   const latest = history[history.length - 1];
   const prev = history[history.length - 2];
   const pick = (row, prefix) => row ? {
@@ -122,88 +121,57 @@ function buildYieldCurve(rateData, swaps, yields) {
   } : {};
 
   return {
-    nominal:   { latest: pick(latest, 'n'), prev: pick(prev, 'n') },
-    real:      { latest: pick(latest, 'r'), prev: pick(prev, 'r') },
-    swaps:     { latest: pick(latest, 'i'), prev: pick(prev, 'i') },
+    nominal: { latest: pick(latest, 'n'), prev: pick(prev, 'n') },
+    real:    { latest: pick(latest, 'r'), prev: pick(prev, 'r') },
+    swaps:   { latest: pick(latest, 'i'), prev: pick(prev, 'i') },
     history,
   };
 }
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const apiKey = searchParams.get('key') || process.env.FRED_API_KEY;
+export async function GET() {
+  const [fred, swaps, yields] = await Promise.all([
+    readFredJson(),
+    readInflationSwapsCsv(),
+    readNominalYieldsCsv(),
+  ]);
 
-  // Even without a FRED key, try to read the swaps CSV so the inflation column
-  // can render something. Nominal & real require FRED.
-  if (!apiKey) {
-    console.log('[YC] no FRED key — returning fallback (CSV-only data if available)');
-    const [swaps, yields] = await Promise.all([
-      readInflationSwapsCsv(),
-      readNominalYieldsCsv(),
-    ]);
-    const yieldCurve = (swaps.length && yields.length)
-      ? buildYieldCurve({}, swaps, yields)
-      : EMPTY_YC;
-    return NextResponse.json({
-      live: false,
-      lastUpdate: new Date().toISOString(),
-      rates: FALLBACK_RATES,
-      cpi: FALLBACK_CPI,
-      dotPlot: DOT_PLOT,
-      yieldCurve,
-    }, { headers: NO_CACHE_HEADERS });
+  const series = fred?.series || {};
+  const getSeries = (id) => (Array.isArray(series[id]) ? series[id] : null);
+
+  const rates = {};
+  for (const id of RATE_SERIES) {
+    const arr = getSeries(id);
+    rates[id] = arr?.at(-1)?.value ?? FALLBACK_RATES[id] ?? null;
   }
 
-  try {
-    const rateSeries = [
-      'EFFR', 'SOFR', 'DFEDTARU', 'DFEDTARL',
-      'DGS1MO', 'DGS3MO', 'DGS6MO', 'DGS1', 'DGS2', 'DGS3',
-      'DGS5', 'DGS7', 'DGS10', 'DGS20', 'DGS30',
-      'T10Y2Y', 'T10Y3M',
-      'T5YIE', 'T10YIE', 'T5YIFR', 'DFII10',
-    ];
-
-    const [rateData, cpiData, ycRateData, swaps, yields] = await Promise.all([
-      fetchMultipleSeries(rateSeries, 5, apiKey),
-      // Full history from CPIAUCSL inception (1947-01) — series with later starts
-      // (CPILFESL 1957, PCEPI/PCEPILFE 1959) just return their available range.
-      fetchMultipleSeries(['CPIAUCSL', 'CPILFESL', 'PCEPI', 'PCEPILFE'], 5, apiKey, '1947-01-01'),
-      fetchMultipleSeries(['DGS1', 'DFII30'], 5, apiKey, '2020-01-01'),
-      readInflationSwapsCsv(),
-      readNominalYieldsCsv(),
-    ]);
-
-    const rates = {};
-    for (const [key, obs] of Object.entries(rateData)) {
-      rates[key] = obs?.[0]?.value ?? FALLBACK_RATES[key] ?? null;
-    }
-    const latestYield = yields[yields.length - 1];
-    if (latestYield) {
-      rates.DGS2 = latestYield.us2y;
-      rates.DGS5 = latestYield.us5y;
-      rates.DGS10 = latestYield.us10y;
-      rates.DGS30 = latestYield.us30y;
-    }
-
-    const yieldCurve = buildYieldCurve(ycRateData, swaps, yields);
-
-    return NextResponse.json({
-      live: true,
-      lastUpdate: new Date().toISOString(),
-      rates,
-      cpi: cpiData?.CPIAUCSL ? computeInflationYoY(cpiData.CPIAUCSL) : FALLBACK_CPI,
-      coreCpi: cpiData?.CPILFESL ? computeInflationYoY(cpiData.CPILFESL) : [],
-      pce: cpiData?.PCEPI ? computeInflationYoY(cpiData.PCEPI) : [],
-      corePce: cpiData?.PCEPILFE ? computeInflationYoY(cpiData.PCEPILFE) : [],
-      dotPlot: DOT_PLOT,
-      yieldCurve,
-    }, { headers: NO_CACHE_HEADERS });
-  } catch (error) {
-    console.error('[FRED] error:', error);
-    return NextResponse.json({
-      live: false, error: error.message, lastUpdate: new Date().toISOString(),
-      rates: FALLBACK_RATES, cpi: FALLBACK_CPI, dotPlot: DOT_PLOT,
-      yieldCurve: EMPTY_YC,
-    }, { headers: NO_CACHE_HEADERS });
+  const latestYield = yields[yields.length - 1];
+  if (latestYield) {
+    rates.DGS2 = latestYield.us2y;
+    rates.DGS5 = latestYield.us5y;
+    rates.DGS10 = latestYield.us10y;
+    rates.DGS30 = latestYield.us30y;
   }
+
+  const ycRateData = { DGS1: getSeries('DGS1'), DFII30: getSeries('DFII30') };
+  const yieldCurve = (swaps.length && yields.length)
+    ? buildYieldCurve(ycRateData, swaps, yields)
+    : EMPTY_YC;
+
+  const cpiObs = getSeries('CPIAUCSL');
+  const coreCpiObs = getSeries('CPILFESL');
+  const pceObs = getSeries('PCEPI');
+  const corePceObs = getSeries('PCEPILFE');
+
+  return NextResponse.json({
+    live: !!fred,
+    asOf: fred?.as_of || null,
+    lastUpdate: new Date().toISOString(),
+    rates,
+    cpi: cpiObs?.length ? computeInflationYoY(cpiObs) : FALLBACK_CPI,
+    coreCpi: coreCpiObs?.length ? computeInflationYoY(coreCpiObs) : [],
+    pce: pceObs?.length ? computeInflationYoY(pceObs) : [],
+    corePce: corePceObs?.length ? computeInflationYoY(corePceObs) : [],
+    dotPlot: DOT_PLOT,
+    yieldCurve,
+  }, { headers: NO_CACHE_HEADERS });
 }
