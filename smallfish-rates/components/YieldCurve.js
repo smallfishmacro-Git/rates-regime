@@ -234,9 +234,7 @@ function Column({ id, title, color, prefix, history, range, setRange, onExpand }
                 }}>
                   {v != null ? v.toFixed(2) : '—'}
                 </span>
-                {stale && v != null && (
-                  <span style={{ fontSize: 7, color: 'var(--dim)', letterSpacing: 0.5, marginTop: 1 }}>(prev)</span>
-                )}
+                <span style={{ fontSize: 7, color: 'var(--dim)', letterSpacing: 0.5, marginTop: 1, visibility: stale && v != null ? 'visible' : 'hidden' }}>(prev)</span>
               </button>
             );
           })}
