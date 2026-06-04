@@ -22,7 +22,7 @@ function ChartPopup({c, onClose, sofr}) {
   const pr=h1y.map(p=>p.close);
   const mn=Math.floor(Math.min(...pr)*4)/4-.125,mx=Math.ceil(Math.max(...pr)*4)/4+.125;
   const sx=i=>P.l+(i/(h1y.length-1))*CW;
-  const sy=v=>P.t+CH-((v-mn)/(mx-mn))*CH;
+  const sy=v=>P.t+((v-mn)/(mx-mn))*CH;
   const spx=100-(sofr||3.63);
   const last=h1y[h1y.length-1];
   const ir=(100-last.close).toFixed(3);
@@ -45,7 +45,7 @@ function ChartPopup({c, onClose, sofr}) {
           {gr.map(v=>(<g key={v}><line x1={P.l} y1={sy(v)} x2={W-P.r} y2={sy(v)} stroke="#1a1d26" strokeWidth={.5}/><text x={P.l-5} y={sy(v)+3} fill="#5a5e6a" fontSize={9} textAnchor="end" fontFamily="monospace">{v.toFixed(2)}</text><text x={W-P.r+5} y={sy(v)+3} fill="#5a5e6a" fontSize={8} fontFamily="monospace">{(100-v).toFixed(2)}%</text></g>))}
           {lvs.map(lv=>{const px=spx+lv.d;if(px<mn||px>mx)return null;return(<g key={lv.l}><line x1={P.l} y1={sy(px)} x2={W-P.r} y2={sy(px)} stroke={lv.c} strokeWidth={lv.d===0?1.5:1} strokeDasharray={lv.d===0?'0':'6 3'} opacity={.7}/><text x={W-P.r+5} y={sy(px)+3} fill={lv.c} fontSize={7} fontFamily="monospace">{lv.l}</text></g>);})}
           {ml.filter((_,i)=>i%2===0).map(m=>(<text key={m.i} x={sx(m.i)} y={H-8} fill="#5a5e6a" fontSize={8} textAnchor="middle" fontFamily="monospace">{m.l}</text>))}
-          <polygon points={`${sx(0)},${sy(mn)} ${pts} ${sx(h1y.length-1)},${sy(mn)}`} fill="url(#cf2)"/>
+          <polygon points={`${sx(0)},${sy(mx)} ${pts} ${sx(h1y.length-1)},${sy(mx)}`} fill="url(#cf2)"/>
           <polyline points={pts} fill="none" stroke="#f0b800" strokeWidth={1.8}/>
           <circle cx={sx(h1y.length-1)} cy={sy(last.close)} r={4} fill="#f0b800"/>
         </svg>
