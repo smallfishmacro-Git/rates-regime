@@ -9,6 +9,7 @@ import SpreadsView from '@/components/SpreadsView';
 import InflationPanel from '@/components/InflationPanel';
 import YieldCurve from '@/components/YieldCurve';
 import StatusBar from '@/components/StatusBar';
+import CurveRegime from '@/components/CurveRegime';
 import { fetchAllSOFR, computeMeetingProbs } from '@/lib/sofrClient';
 import { FALLBACK_MEETINGS, FALLBACK_STRIP } from '@/lib/constants';
 
@@ -19,6 +20,9 @@ export default function Home() {
   const [fredLoading, setFredLoading] = useState(true);
   const [stirTab, setStirTab] = useState('MEETINGS');
   const [inputKey, setInputKey] = useState('');
+  const [view, setView] = useState('DASHBOARD');
+  const [curveData, setCurveData] = useState(null);
+  const [curveLoading, setCurveLoading] = useState(false);
 
   const fetchFred = useCallback(async (key) => {
     setFredLoading(true);
@@ -44,6 +48,22 @@ export default function Home() {
     fetchSOFR();
   }, [fetchFred, fetchSOFR]);
 
+  // Lazy-load the curve-regime dataset the first time that tab is opened.
+  useEffect(() => {
+    if (view !== 'CURVE REGIME' || curveData) return;
+    let cancelled = false;
+    setCurveLoading(true);
+    (async () => {
+      try {
+        const r = await fetch('/api/curve');
+        const j = await r.json();
+        if (!cancelled) setCurveData(j);
+      } catch (e) { console.error('curve error:', e); }
+      if (!cancelled) setCurveLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [view, curveData]);
+
   const handleConnect = () => {
     if (inputKey) { localStorage.setItem('sfm_fred_key', inputKey); fetchFred(inputKey); }
   };
@@ -60,7 +80,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <Header />
+      <Header onTabChange={setView} />
+      {view === 'CURVE REGIME' ? (
+        <CurveRegime data={curveData} loading={curveLoading} />
+      ) : (
+        <>
       <div style={{ padding: '0 16px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '8px 12px', borderRadius: 3, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 10, color: 'var(--dim)', letterSpacing: 1 }}>FRED API</span>
@@ -98,6 +122,8 @@ export default function Home() {
       <YieldCurve data={data} />
 
       <StatusBar data={data} loading={fredLoading || sofrLoading} sofrLoading={sofrLoading} />
+        </>
+      )}
     </div>
   );
 }

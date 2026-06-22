@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 
-const SUB_TABS = ['DASHBOARD', 'REGIME MAP', 'CROSS-ASSET', 'EQUITIES', 'NEWS', 'BRIEFING'];
+const SUB_TABS = ['DASHBOARD', 'CURVE REGIME', 'REGIME MAP', 'CROSS-ASSET', 'EQUITIES', 'NEWS', 'BRIEFING'];
 
-export default function Header() {
+export default function Header({ onTabChange }) {
   const [activeSub, setActiveSub] = useState('DASHBOARD');
 
   const now = new Date();
@@ -64,7 +64,7 @@ export default function Header() {
         {SUB_TABS.map((tab) => (
           <span
             key={tab}
-            onClick={() => setActiveSub(tab)}
+            onClick={() => { setActiveSub(tab); onTabChange?.(tab); }}
             style={{
               fontSize: 10, padding: '5px 16px', letterSpacing: 1,
               color: tab === activeSub ? 'var(--text)' : 'var(--dim)',
