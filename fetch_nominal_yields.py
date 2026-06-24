@@ -289,12 +289,41 @@ def _finalize(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _drop_bad_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """Purge unusable rows from the full frame — market-radar holiday artifacts.
+
+    Two cases, both seen on US bond-market holidays when market-radar emits a
+    placeholder instead of a genuine close (e.g. Juneteenth 2026-06-19, where
+    every tenor came back 3.5365):
+
+    * any tenor non-finite or <= 0 — not a real yield;
+    * all tenors EXACTLY equal — an impossible Treasury curve (2s10s and every
+      other spread collapse to a spurious 0). Kept strict (exact equality) so
+      genuinely flat/inverted curves are never touched.
+
+    Runs on the whole assembled frame at write time, so a bad row already
+    committed is purged on the next regen — not just newly fetched ones.
+    """
+    cols = [c for c in OUTPUT_COLUMNS if c in df.columns]
+    if not cols:
+        return df
+    vals = df[cols].apply(pd.to_numeric, errors="coerce")
+    bad = ~(vals.notna().all(axis=1) & vals.gt(0).all(axis=1))
+    if len(cols) >= 2:
+        bad = bad | (vals.nunique(axis=1) <= 1)  # all tenors identical
+    if bad.any():
+        print(f"  dropping {int(bad.sum())} bad row(s): {list(df.loc[bad, 'date'])}",
+              file=sys.stderr)
+    return df[~bad]
+
+
 def save(df: pd.DataFrame) -> pd.DataFrame:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     if OUTPUT_PATH.exists():
         existing = pd.read_csv(OUTPUT_PATH)
         df = pd.concat([existing, df], ignore_index=True)
     df = df.drop_duplicates(subset=["date"], keep="last").sort_values("date")
+    df = _drop_bad_rows(df)
     cols = ["date"] + [c for c in OUTPUT_COLUMNS if c in df.columns]
     df = df[cols]
     df.to_csv(OUTPUT_PATH, index=False)
