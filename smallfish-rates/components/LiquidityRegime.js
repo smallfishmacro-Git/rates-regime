@@ -131,7 +131,8 @@ export default function LiquidityRegime({ data, loading }) {
   }, [data, tenor]);
 
   // ---- shells ----
-  const wrap = { fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)', fontSize: 12 };
+  // padding '0 16px' mirrors CURVE REGIME's root div so both tabs share identical content bounds
+  const wrap = { fontFamily: "'JetBrains Mono', monospace", color: 'var(--text)', fontSize: 12, padding: '0 16px' };
   const card = { background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 4, padding: 14 };
 
   if (loading) return <div style={{ ...wrap, padding: 24, color: 'var(--dim)' }}>loading liquidity regime…</div>;
