@@ -87,6 +87,8 @@ function ticks(min, max, n = 5) {
 
 const fmtPct = (v) => (v == null ? '—' : `${v.toFixed(2)}%`);
 const fmtBp  = (v) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)} bp`);
+// sign-based delta colour, mirrors CURVE REGIME (positive = red, negative = green)
+const deltaColor = (v) => (v == null ? 'var(--dim)' : v > 0 ? '#ff5c5c' : v < 0 ? '#22c977' : 'var(--dim)');
 
 export default function LiquidityRegime({ data, loading }) {
   const [tenor, setTenor] = useState('10Y');
@@ -157,44 +159,47 @@ export default function LiquidityRegime({ data, loading }) {
 
   const TenorBtn = ({ t }) => (
     <button
+      className={`tab-btn ${tenor === t ? 'active' : ''}`}
+      style={{ fontSize: 10 }}
       onClick={() => setTenor(t)}
-      style={{
-        fontFamily: "'JetBrains Mono', monospace", fontSize: 12, cursor: 'pointer',
-        padding: '4px 12px', borderRadius: 3,
-        border: `1px solid ${tenor === t ? 'var(--amber)' : 'var(--border)'}`,
-        background: tenor === t ? 'rgba(240,184,0,0.12)' : 'transparent',
-        color: tenor === t ? 'var(--amber)' : 'var(--dim)',
-      }}
     >{t}</button>
   );
 
   const QuadCard = ({ k }) => {
     const q = Q[k], active = cur.quad === k;
+    const pct = Math.round((100 * counts[k]) / total);
     return (
       <div style={{
-        background: 'var(--card)',
-        border: `1px solid ${active ? 'var(--amber)' : 'var(--border)'}`,
-        boxShadow: active ? '0 0 0 1px var(--amber), 0 0 18px rgba(240,184,0,0.18)' : 'none',
-        borderRadius: 4, padding: 14,
+        background: active ? 'rgba(240,184,0,0.04)' : 'var(--card)',
+        border: `1px solid ${active ? q.color : 'var(--border)'}`,
+        borderLeft: `3px solid ${q.color}`, borderRadius: 4, padding: '10px 12px',
+        boxShadow: active ? `0 0 0 1px ${q.color}33` : 'none',
       }}>
-        <div style={{ color: q.color, fontWeight: 600, letterSpacing: 0.5 }}>{q.name}</div>
-        <div style={{ color: 'var(--dim)', fontSize: 11, margin: '2px 0 10px' }}>{q.sub}</div>
-        {PLAYBOOK[k].map(([label, txt]) => (
-          <div key={label} style={{ display: 'flex', gap: 10, lineHeight: '1.6' }}>
-            <span style={{ color: 'var(--dim)', width: 64, flex: '0 0 64px' }}>{label}</span>
-            <span>{txt}</span>
-          </div>
-        ))}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 11, fontWeight: 'bold', color: q.color, letterSpacing: 1 }}>{q.name}</span>
+          <span style={{ fontSize: 11, color: active ? q.color : 'var(--dim)', fontWeight: 'bold' }}>{pct}%</span>
+        </div>
+        <div style={{ fontSize: 8.5, color: 'var(--dim)', margin: '3px 0 6px', letterSpacing: 0.3 }}>{q.sub}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {PLAYBOOK[k].map(([label, txt]) => (
+            <div key={label} style={{ fontSize: 9, lineHeight: 1.35 }}>
+              <span style={{ color: q.color, fontWeight: 'bold' }}>{label}</span>
+              <span style={{ color: 'var(--dim)' }}> · {txt}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
 
-  const Metric = ({ label, value, delta }) => (
-    <div style={{ ...card, flex: 1 }}>
-      <div style={{ color: 'var(--dim)', fontSize: 11, letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ color: 'var(--amber)', fontSize: 26, fontWeight: 700, lineHeight: '1.2' }}>{value}</div>
-      {delta !== undefined && (
-        <div style={{ color: 'var(--dim)', fontSize: 11 }}>{delta} · {LOOKBACK}D</div>
+  const Metric = ({ label, value, deltaVal }) => (
+    <div style={{ ...card, padding: '10px 12px', flex: 1 }}>
+      <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1, marginBottom: 4 }}>{label}</div>
+      <div style={{ color: 'var(--amber)', fontSize: 20, fontWeight: 'bold', lineHeight: 1.1 }}>{value}</div>
+      {deltaVal !== undefined && (
+        <div style={{ fontSize: 9, color: 'var(--dim)', marginTop: 4 }}>
+          <span style={{ color: deltaColor(deltaVal) }}>{fmtBp(deltaVal)}</span> · {LOOKBACK}D
+        </div>
       )}
     </div>
   );
@@ -202,19 +207,22 @@ export default function LiquidityRegime({ data, loading }) {
   return (
     <div style={wrap}>
       {/* title + maturity toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ color: 'var(--amber)', letterSpacing: 1, fontSize: 13 }}>LIQUIDITY REGIME</div>
-        <div style={{ display: 'flex', gap: 8 }}>{TENORS.map((t) => <TenorBtn key={t} t={t} />)}</div>
+        <div style={{ display: 'flex', gap: 2, marginLeft: 12 }}>{TENORS.map((t) => <TenorBtn key={t} t={t} />)}</div>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--dim)', letterSpacing: 1 }}>
+          {tenor} · {LOOKBACK}D · {pts.length}d
+        </span>
       </div>
 
       {/* metrics strip */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <Metric label={`${tenor} REAL YIELD`}     value={fmtPct(lastReal)} delta={fmtBp(cur.dReal)} />
-        <Metric label={`${tenor} INFLATION SWAP`} value={fmtPct(lastInfl)} delta={fmtBp(cur.dInfl)} />
-        <div style={{ ...card, flex: 1 }}>
-          <div style={{ color: 'var(--dim)', fontSize: 11, letterSpacing: 0.5 }}>CURRENT QUADRANT</div>
-          <div style={{ color: curQ.color, fontSize: 22, fontWeight: 700, lineHeight: '1.3' }}>{curQ.name}</div>
-          <div style={{ color: 'var(--dim)', fontSize: 11 }}>as of {asOf}</div>
+        <Metric label={`${tenor} REAL YIELD`}     value={fmtPct(lastReal)} deltaVal={cur.dReal} />
+        <Metric label={`${tenor} INFLATION SWAP`} value={fmtPct(lastInfl)} deltaVal={cur.dInfl} />
+        <div style={{ ...card, padding: '10px 12px', flex: 1 }}>
+          <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1, marginBottom: 4 }}>CURRENT QUADRANT</div>
+          <div style={{ color: curQ.color, fontSize: 17, fontWeight: 'bold', lineHeight: 1.1 }}>{curQ.name}</div>
+          <div style={{ fontSize: 9, color: 'var(--dim)', marginTop: 4 }}>as of {asOf}</div>
         </div>
       </div>
 
@@ -237,12 +245,9 @@ export default function LiquidityRegime({ data, loading }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {/* scatter */}
         <div style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-            <span style={{ color: 'var(--text)', letterSpacing: 0.5 }}>SCATTER · ΔRY vs ΔBE</span>
-            <span style={{ color: 'var(--dim)', fontSize: 10 }}>{LOOKBACK}-day changes · last {WINDOW_YEARS}y</span>
-          </div>
-          <div style={{ color: 'var(--dim)', fontSize: 10, lineHeight: '1.4', marginBottom: 8 }}>
-            60d rolling (ΔRY, ΔBE) scatter, quadrant-coloured. Today's marker emphasised — direction of travel matters (Recessionary → Fed QE is the classic policy-pivot arc).
+          <div style={{ marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 11, fontWeight: 'bold', color: 'var(--text)', letterSpacing: 1 }}>SCATTER · ΔRY vs ΔBE</span>
+            <span style={{ fontSize: 9, color: 'var(--dim)', marginLeft: 8 }}>{LOOKBACK}-day changes · quadrant-coloured · white = now · last {WINDOW_YEARS}y</span>
           </div>
           <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }}>
             {/* quadrant tints */}
@@ -268,13 +273,13 @@ export default function LiquidityRegime({ data, loading }) {
             <circle cx={sx(cur.dInfl)} cy={sy(cur.dReal)} r="6.5" fill="#fff" stroke={curQ.color} strokeWidth="2.5" />
             {/* tick labels */}
             {xticks.map((t, i) => (
-              <text key={'tx' + i} x={sx(t)} y={T + ph + 14} fill="var(--dim)" fontSize="9" textAnchor="middle">{t.toFixed(0)}</text>
+              <text key={'tx' + i} x={sx(t)} y={T + ph + 14} fill="var(--dim)" fontSize="8" textAnchor="middle">{t.toFixed(0)}</text>
             ))}
             {yticks.map((t, i) => (
-              <text key={'ty' + i} x={L - 6} y={sy(t) + 3} fill="var(--dim)" fontSize="9" textAnchor="end">{t.toFixed(0)}</text>
+              <text key={'ty' + i} x={L - 6} y={sy(t) + 3} fill="var(--dim)" fontSize="8" textAnchor="end">{t.toFixed(0)}</text>
             ))}
-            <text x={L + pw / 2} y={H - 4} fill="var(--dim)" fontSize="10" textAnchor="middle">ΔBreakeven · bp · {LOOKBACK}D</text>
-            <text x={12} y={T + ph / 2} fill="var(--dim)" fontSize="10" textAnchor="middle" transform={`rotate(-90 12 ${T + ph / 2})`}>ΔReal Yield · bp · {LOOKBACK}D</text>
+            <text x={L + pw / 2} y={H - 4} fill="var(--dim)" fontSize="8.5" textAnchor="middle">ΔBreakeven · bp · {LOOKBACK}D</text>
+            <text x={12} y={T + ph / 2} fill="var(--dim)" fontSize="8.5" textAnchor="middle" transform={`rotate(-90 12 ${T + ph / 2})`}>ΔReal Yield · bp · {LOOKBACK}D</text>
           </svg>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
             {Object.entries(Q).map(([k, q]) => (
@@ -287,25 +292,27 @@ export default function LiquidityRegime({ data, loading }) {
 
         {/* ribbon + residency */}
         <div style={card}>
-          <div style={{ color: 'var(--text)', letterSpacing: 0.5, marginBottom: 4 }}>QUADRANT TIMELINE</div>
-          <div style={{ color: 'var(--dim)', fontSize: 10, lineHeight: '1.4', marginBottom: 8 }}>
-            Daily quadrant-classification ribbon and per-quadrant residency % over {WINDOW_YEARS}y.
+          <div style={{ marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+            <span style={{ fontSize: 11, fontWeight: 'bold', color: 'var(--text)', letterSpacing: 1 }}>QUADRANT TIMELINE</span>
+            <span style={{ fontSize: 9, color: 'var(--dim)', marginLeft: 8 }}>% days in each quadrant · last {WINDOW_YEARS}y</span>
           </div>
           <svg viewBox={`0 0 ${RW} ${RH}`} preserveAspectRatio="none" style={{ width: '100%', height: 28 }}>
             {pts.map((p, i) => (
               <rect key={i} x={i * rw} y="0" width={rw + 0.6} height={RH} fill={p.quad ? Q[p.quad].color : 'var(--border)'} />
             ))}
           </svg>
-          <div style={{ marginTop: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 6 }}>
             {Object.entries(Q).map(([k, q]) => {
-              const pct = Math.round((100 * counts[k]) / total);
+              const days = counts[k];
+              const pct = (100 * days) / total;
               return (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 2, background: q.color, flex: '0 0 10px' }} />
-                  <span style={{ flex: 1 }}>{q.name}</span>
-                  <span style={{ color: 'var(--dim)', width: 110, flex: '0 0 110px' }}>
-                    <span style={{ display: 'inline-block', height: 6, width: `${pct}%`, background: q.color, borderRadius: 2, verticalAlign: 'middle', marginRight: 6 }} />
-                    {pct}%
+                <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: q.color }} />
+                    <span style={{ fontSize: 10, color: 'var(--text)' }}>{q.name}</span>
+                  </span>
+                  <span style={{ fontSize: 10, color: 'var(--text)' }}>
+                    {pct.toFixed(1)}% <span style={{ color: 'var(--dim)' }}>({days}d)</span>
                   </span>
                 </div>
               );
