@@ -10,6 +10,7 @@ import InflationPanel from '@/components/InflationPanel';
 import YieldCurve from '@/components/YieldCurve';
 import StatusBar from '@/components/StatusBar';
 import CurveRegime from '@/components/CurveRegime';
+import LiquidityRegime from '@/components/LiquidityRegime';
 import { fetchAllSOFR, computeMeetingProbs } from '@/lib/sofrClient';
 import { FALLBACK_MEETINGS, FALLBACK_STRIP } from '@/lib/constants';
 
@@ -23,6 +24,8 @@ export default function Home() {
   const [view, setView] = useState('DASHBOARD');
   const [curveData, setCurveData] = useState(null);
   const [curveLoading, setCurveLoading] = useState(false);
+  const [liqData, setLiqData] = useState(null);
+  const [liqLoading, setLiqLoading] = useState(false);
 
   const fetchFred = useCallback(async (key) => {
     setFredLoading(true);
@@ -64,6 +67,22 @@ export default function Home() {
     return () => { cancelled = true; };
   }, [view, curveData]);
 
+  // Lazy-load the liquidity-regime dataset the first time that tab is opened.
+  useEffect(() => {
+    if (view !== 'LIQUIDITY REGIME' || liqData) return;
+    let cancelled = false;
+    setLiqLoading(true);
+    (async () => {
+      try {
+        const r = await fetch('/api/liquidity');
+        const j = await r.json();
+        if (!cancelled) setLiqData(j);
+      } catch (e) { console.error('liquidity error:', e); }
+      if (!cancelled) setLiqLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [view, liqData]);
+
   const handleConnect = () => {
     if (inputKey) { localStorage.setItem('sfm_fred_key', inputKey); fetchFred(inputKey); }
   };
@@ -83,6 +102,8 @@ export default function Home() {
       <Header onTabChange={setView} />
       {view === 'CURVE REGIME' ? (
         <CurveRegime data={curveData} loading={curveLoading} />
+      ) : view === 'LIQUIDITY REGIME' ? (
+        <LiquidityRegime data={liqData} loading={liqLoading} />
       ) : (
         <>
       <div style={{ padding: '0 16px' }}>

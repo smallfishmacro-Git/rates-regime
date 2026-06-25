@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-const SUB_TABS = ['DASHBOARD', 'CURVE REGIME', 'REGIME MAP', 'CROSS-ASSET', 'EQUITIES', 'NEWS', 'BRIEFING'];
+const SUB_TABS = ['DASHBOARD', 'CURVE REGIME', 'LIQUIDITY REGIME', 'REGIME MAP', 'CROSS-ASSET', 'EQUITIES', 'NEWS', 'BRIEFING'];
 
 export default function Header({ onTabChange }) {
   const [activeSub, setActiveSub] = useState('DASHBOARD');
