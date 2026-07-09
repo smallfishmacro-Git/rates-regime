@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import CurveBacktest from '@/components/CurveBacktest';
 
 // =====================================================================
 // CURVE REGIME — yield-curve regime classifier
@@ -11,7 +12,7 @@ import { useState, useMemo } from 'react';
 // ---- tunable constants ------------------------------------------------------
 const DEFAULT_CURVE = '2S10S';
 const DEFAULT_LOOKBACK = 60;     // trading days
-const WINDOW_YEARS = 5;          // history shown in scatter / timeline / dist
+const WINDOW_YEARS = 20;          // history shown in scatter / timeline / dist
 const PATH_DAYS = 252;           // trailing 12M path overlaid on the scatter
 // ----------------------------------------------------------------------------
 
@@ -274,6 +275,10 @@ export default function CurveRegime({ data, loading }) {
           <TimelineStats dist={model.dist} />
         </Panel>
       </div>
+
+      {/* ---- regime backtest ---- */}
+      <CurveBacktest points={model.points} regimes={REGIME} order={STAT_ORDER}
+                     currentRegime={cur.regime} curveId={curveId} lookback={lookback} />
     </div>
   );
 }

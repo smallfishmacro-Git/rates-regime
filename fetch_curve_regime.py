@@ -42,8 +42,8 @@ FRED_BASE = "https://api.stlouisfed.org/fred/series/observations"
 API_KEY = os.environ.get("FRED_API_KEY", "").strip()
 
 # ---- tunable constants -------------------------------------------------------
-# Earliest observation to commit. 5Y display window + headroom for big lookbacks.
-OBSERVATION_START = os.environ.get("CURVE_REGIME_START", "2017-01-01").strip()
+# Earliest observation to commit. 20Y window; DGS30 gap (2002 to 2006-02) is the floor.
+OBSERVATION_START = os.environ.get("CURVE_REGIME_START", "2006-03-01").strip()
 # ----------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parent
