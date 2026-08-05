@@ -9,13 +9,13 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2026-09-16",
-      "lastPx": 96.14,
-      "impRate": 3.86,
-      "volume": 258,
-      "bp1d": -2.0,
-      "bp5d": -11.5,
-      "bp1m": -0.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.155,
+      "impRate": 3.845,
+      "volume": 113,
+      "bp1d": -1.5,
+      "bp5d": -2.5,
+      "bp1m": -1.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -388,6 +388,10 @@
         {
           "date": "2026-08-04",
           "close": 96.14
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.155
         }
       ]
     },
@@ -399,13 +403,13 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2026-12-16",
-      "lastPx": 95.98,
-      "impRate": 4.02,
-      "volume": 1045,
-      "bp1d": -3.5,
-      "bp5d": -10.5,
-      "bp1m": 1.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.995,
+      "impRate": 4.005,
+      "volume": 247,
+      "bp1d": -1.5,
+      "bp5d": -4.5,
+      "bp1m": 2.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -778,6 +782,10 @@
         {
           "date": "2026-08-04",
           "close": 95.98
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.995
         }
       ]
     },
@@ -789,13 +797,13 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2027-03-17",
-      "lastPx": 95.9,
-      "impRate": 4.1,
-      "volume": 1316,
-      "bp1d": -4.5,
-      "bp5d": -10.0,
-      "bp1m": 4.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.92,
+      "impRate": 4.08,
+      "volume": 298,
+      "bp1d": -2.0,
+      "bp5d": -8.0,
+      "bp1m": 5.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -1168,6 +1176,10 @@
         {
           "date": "2026-08-04",
           "close": 95.9
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.92
         }
       ]
     },
@@ -1179,13 +1191,13 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2027-06-16",
-      "lastPx": 95.89,
-      "impRate": 4.11,
-      "volume": 713,
-      "bp1d": -6.0,
-      "bp5d": -9.5,
-      "bp1m": 7.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.905,
+      "impRate": 4.095,
+      "volume": 358,
+      "bp1d": -1.5,
+      "bp5d": -10.0,
+      "bp1m": 9.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -1558,6 +1570,10 @@
         {
           "date": "2026-08-04",
           "close": 95.89
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.905
         }
       ]
     },
@@ -1569,13 +1585,13 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2027-09-15",
-      "lastPx": 95.93,
-      "impRate": 4.07,
-      "volume": 905,
-      "bp1d": -6.5,
-      "bp5d": -9.0,
-      "bp1m": 8.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.94,
+      "impRate": 4.06,
+      "volume": 318,
+      "bp1d": -1.0,
+      "bp5d": -11.0,
+      "bp1m": 11.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -1948,6 +1964,10 @@
         {
           "date": "2026-08-04",
           "close": 95.93
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.94
         }
       ]
     },
@@ -1959,13 +1979,13 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2027-12-15",
-      "lastPx": 95.98,
-      "impRate": 4.02,
-      "volume": 1478,
-      "bp1d": -6.0,
-      "bp5d": -7.0,
-      "bp1m": 9.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.985,
+      "impRate": 4.015,
+      "volume": 83,
+      "bp1d": -0.5,
+      "bp5d": -10.5,
+      "bp1m": 13.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -2338,6 +2358,10 @@
         {
           "date": "2026-08-04",
           "close": 95.98
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.985
         }
       ]
     },
@@ -2349,13 +2373,13 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2028-03-15",
-      "lastPx": 96.02,
-      "impRate": 3.98,
-      "volume": 480,
-      "bp1d": -7.0,
-      "bp5d": -7.0,
-      "bp1m": 10.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.015,
+      "impRate": 3.985,
+      "volume": 171,
+      "bp1d": 0.5,
+      "bp5d": -10.0,
+      "bp1m": 15.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -2728,6 +2752,10 @@
         {
           "date": "2026-08-04",
           "close": 96.02
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.015
         }
       ]
     },
@@ -2739,13 +2767,13 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2028-06-21",
-      "lastPx": 96.035,
-      "impRate": 3.965,
-      "volume": 301,
-      "bp1d": -7.5,
-      "bp5d": -6.5,
-      "bp1m": 11.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.025,
+      "impRate": 3.975,
+      "volume": 369,
+      "bp1d": 1.0,
+      "bp5d": -9.5,
+      "bp1m": 16.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -3118,6 +3146,10 @@
         {
           "date": "2026-08-04",
           "close": 96.035
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.025
         }
       ]
     },
@@ -3129,13 +3161,13 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2028-09-20",
-      "lastPx": 96.035,
-      "impRate": 3.965,
-      "volume": 228,
-      "bp1d": -8.0,
-      "bp5d": -5.0,
-      "bp1m": 11.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.02,
+      "impRate": 3.98,
+      "volume": 23,
+      "bp1d": 1.5,
+      "bp5d": -8.5,
+      "bp1m": 18.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -3508,6 +3540,10 @@
         {
           "date": "2026-08-04",
           "close": 96.035
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.02
         }
       ]
     },
@@ -3519,13 +3555,13 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2028-12-20",
-      "lastPx": 96.025,
-      "impRate": 3.975,
-      "volume": 387,
-      "bp1d": -7.5,
-      "bp5d": -3.5,
-      "bp1m": 13.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.015,
+      "impRate": 3.985,
+      "volume": 178,
+      "bp1d": 1.0,
+      "bp5d": -8.0,
+      "bp1m": 18.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -3898,6 +3934,10 @@
         {
           "date": "2026-08-04",
           "close": 96.025
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.015
         }
       ]
     },
@@ -3909,13 +3949,13 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2029-03-21",
-      "lastPx": 96.02,
-      "impRate": 3.98,
-      "volume": 484,
-      "bp1d": -7.5,
-      "bp5d": -3.0,
-      "bp1m": 13.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.01,
+      "impRate": 3.99,
+      "volume": 242,
+      "bp1d": 1.0,
+      "bp5d": -7.5,
+      "bp1m": 18.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -4288,6 +4328,10 @@
         {
           "date": "2026-08-04",
           "close": 96.02
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.01
         }
       ]
     },
@@ -4299,13 +4343,13 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2029-06-20",
-      "lastPx": 96.015,
-      "impRate": 3.985,
-      "volume": 238,
-      "bp1d": -8.0,
-      "bp5d": -2.5,
-      "bp1m": 14.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 96.0,
+      "impRate": 4.0,
+      "volume": 259,
+      "bp1d": 1.5,
+      "bp5d": -6.5,
+      "bp1m": 19.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -4678,6 +4722,10 @@
         {
           "date": "2026-08-04",
           "close": 96.015
+        },
+        {
+          "date": "2026-08-05",
+          "close": 96.0
         }
       ]
     },
@@ -4689,13 +4737,13 @@
       "monthCode": "U",
       "month": 9,
       "settlementDate": "2029-09-19",
-      "lastPx": 96.0,
-      "impRate": 4.0,
-      "volume": 113,
-      "bp1d": -8.0,
-      "bp5d": -1.5,
-      "bp1m": 14.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.985,
+      "impRate": 4.015,
+      "volume": 228,
+      "bp1d": 1.5,
+      "bp5d": -6.0,
+      "bp1m": 19.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -5068,6 +5116,10 @@
         {
           "date": "2026-08-04",
           "close": 96.0
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.985
         }
       ]
     },
@@ -5079,13 +5131,13 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2029-12-19",
-      "lastPx": 95.985,
-      "impRate": 4.015,
-      "volume": 74,
-      "bp1d": -8.0,
-      "bp5d": -1.0,
-      "bp1m": 14.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.97,
+      "impRate": 4.03,
+      "volume": 146,
+      "bp1d": 1.5,
+      "bp5d": -5.5,
+      "bp1m": 19.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -5458,6 +5510,10 @@
         {
           "date": "2026-08-04",
           "close": 95.985
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.97
         }
       ]
     },
@@ -5469,13 +5525,13 @@
       "monthCode": "H",
       "month": 3,
       "settlementDate": "2030-03-20",
-      "lastPx": 95.965,
-      "impRate": 4.035,
-      "volume": 27,
-      "bp1d": -8.0,
-      "bp5d": -0.5,
-      "bp1m": 14.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.95,
+      "impRate": 4.05,
+      "volume": 149,
+      "bp1d": 1.5,
+      "bp5d": -5.0,
+      "bp1m": 19.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -5848,6 +5904,10 @@
         {
           "date": "2026-08-04",
           "close": 95.965
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.95
         }
       ]
     },
@@ -5859,13 +5919,13 @@
       "monthCode": "M",
       "month": 6,
       "settlementDate": "2030-06-19",
-      "lastPx": 95.935,
-      "impRate": 4.065,
-      "volume": 56,
-      "bp1d": -7.0,
-      "bp5d": 0.5,
-      "bp1m": 15.0,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.93,
+      "impRate": 4.07,
+      "volume": 68,
+      "bp1d": 0.5,
+      "bp5d": -5.5,
+      "bp1m": 18.5,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -6238,6 +6298,10 @@
         {
           "date": "2026-08-04",
           "close": 95.935
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.93
         }
       ]
     },
@@ -6251,11 +6315,11 @@
       "settlementDate": "2030-09-18",
       "lastPx": 95.905,
       "impRate": 4.095,
-      "volume": 27,
-      "bp1d": -7.0,
-      "bp5d": 1.5,
-      "bp1m": 15.0,
-      "lastDate": "2026-08-04",
+      "volume": 18,
+      "bp1d": -0.0,
+      "bp5d": -5.5,
+      "bp1m": 18.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -6628,6 +6692,10 @@
         {
           "date": "2026-08-04",
           "close": 95.905
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.905
         }
       ]
     },
@@ -6639,13 +6707,13 @@
       "monthCode": "Z",
       "month": 12,
       "settlementDate": "2030-12-18",
-      "lastPx": 95.875,
-      "impRate": 4.125,
-      "volume": 107,
-      "bp1d": -7.5,
-      "bp5d": 1.5,
-      "bp1m": 14.5,
-      "lastDate": "2026-08-04",
+      "lastPx": 95.87,
+      "impRate": 4.13,
+      "volume": 69,
+      "bp1d": 0.5,
+      "bp5d": -5.0,
+      "bp1m": 18.0,
+      "lastDate": "2026-08-05",
       "history": [
         {
           "date": "2026-03-27",
@@ -7018,6 +7086,10 @@
         {
           "date": "2026-08-04",
           "close": 95.875
+        },
+        {
+          "date": "2026-08-05",
+          "close": 95.87
         }
       ]
     }
@@ -7034,13 +7106,13 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2026-09-16",
-          "lastPx": 96.14,
-          "impRate": 3.86,
-          "volume": 258,
-          "bp1d": -2.0,
-          "bp5d": -11.5,
-          "bp1m": -0.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.155,
+          "impRate": 3.845,
+          "volume": 113,
+          "bp1d": -1.5,
+          "bp5d": -2.5,
+          "bp1m": -1.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -7413,6 +7485,10 @@
             {
               "date": "2026-08-04",
               "close": 96.14
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.155
             }
           ]
         },
@@ -7424,13 +7500,13 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2026-12-16",
-          "lastPx": 95.98,
-          "impRate": 4.02,
-          "volume": 1045,
-          "bp1d": -3.5,
-          "bp5d": -10.5,
-          "bp1m": 1.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.995,
+          "impRate": 4.005,
+          "volume": 247,
+          "bp1d": -1.5,
+          "bp5d": -4.5,
+          "bp1m": 2.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -7803,6 +7879,10 @@
             {
               "date": "2026-08-04",
               "close": 95.98
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.995
             }
           ]
         }
@@ -7819,13 +7899,13 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2027-03-17",
-          "lastPx": 95.9,
-          "impRate": 4.1,
-          "volume": 1316,
-          "bp1d": -4.5,
-          "bp5d": -10.0,
-          "bp1m": 4.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.92,
+          "impRate": 4.08,
+          "volume": 298,
+          "bp1d": -2.0,
+          "bp5d": -8.0,
+          "bp1m": 5.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -8198,6 +8278,10 @@
             {
               "date": "2026-08-04",
               "close": 95.9
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.92
             }
           ]
         },
@@ -8209,13 +8293,13 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2027-06-16",
-          "lastPx": 95.89,
-          "impRate": 4.11,
-          "volume": 713,
-          "bp1d": -6.0,
-          "bp5d": -9.5,
-          "bp1m": 7.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.905,
+          "impRate": 4.095,
+          "volume": 358,
+          "bp1d": -1.5,
+          "bp5d": -10.0,
+          "bp1m": 9.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -8588,6 +8672,10 @@
             {
               "date": "2026-08-04",
               "close": 95.89
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.905
             }
           ]
         },
@@ -8599,13 +8687,13 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2027-09-15",
-          "lastPx": 95.93,
-          "impRate": 4.07,
-          "volume": 905,
-          "bp1d": -6.5,
-          "bp5d": -9.0,
-          "bp1m": 8.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.94,
+          "impRate": 4.06,
+          "volume": 318,
+          "bp1d": -1.0,
+          "bp5d": -11.0,
+          "bp1m": 11.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -8978,6 +9066,10 @@
             {
               "date": "2026-08-04",
               "close": 95.93
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.94
             }
           ]
         },
@@ -8989,13 +9081,13 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2027-12-15",
-          "lastPx": 95.98,
-          "impRate": 4.02,
-          "volume": 1478,
-          "bp1d": -6.0,
-          "bp5d": -7.0,
-          "bp1m": 9.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.985,
+          "impRate": 4.015,
+          "volume": 83,
+          "bp1d": -0.5,
+          "bp5d": -10.5,
+          "bp1m": 13.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -9368,6 +9460,10 @@
             {
               "date": "2026-08-04",
               "close": 95.98
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.985
             }
           ]
         }
@@ -9384,13 +9480,13 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2028-03-15",
-          "lastPx": 96.02,
-          "impRate": 3.98,
-          "volume": 480,
-          "bp1d": -7.0,
-          "bp5d": -7.0,
-          "bp1m": 10.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.015,
+          "impRate": 3.985,
+          "volume": 171,
+          "bp1d": 0.5,
+          "bp5d": -10.0,
+          "bp1m": 15.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -9763,6 +9859,10 @@
             {
               "date": "2026-08-04",
               "close": 96.02
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.015
             }
           ]
         },
@@ -9774,13 +9874,13 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2028-06-21",
-          "lastPx": 96.035,
-          "impRate": 3.965,
-          "volume": 301,
-          "bp1d": -7.5,
-          "bp5d": -6.5,
-          "bp1m": 11.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.025,
+          "impRate": 3.975,
+          "volume": 369,
+          "bp1d": 1.0,
+          "bp5d": -9.5,
+          "bp1m": 16.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -10153,6 +10253,10 @@
             {
               "date": "2026-08-04",
               "close": 96.035
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.025
             }
           ]
         },
@@ -10164,13 +10268,13 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2028-09-20",
-          "lastPx": 96.035,
-          "impRate": 3.965,
-          "volume": 228,
-          "bp1d": -8.0,
-          "bp5d": -5.0,
-          "bp1m": 11.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.02,
+          "impRate": 3.98,
+          "volume": 23,
+          "bp1d": 1.5,
+          "bp5d": -8.5,
+          "bp1m": 18.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -10543,6 +10647,10 @@
             {
               "date": "2026-08-04",
               "close": 96.035
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.02
             }
           ]
         },
@@ -10554,13 +10662,13 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2028-12-20",
-          "lastPx": 96.025,
-          "impRate": 3.975,
-          "volume": 387,
-          "bp1d": -7.5,
-          "bp5d": -3.5,
-          "bp1m": 13.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.015,
+          "impRate": 3.985,
+          "volume": 178,
+          "bp1d": 1.0,
+          "bp5d": -8.0,
+          "bp1m": 18.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -10933,6 +11041,10 @@
             {
               "date": "2026-08-04",
               "close": 96.025
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.015
             }
           ]
         }
@@ -10949,13 +11061,13 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2029-03-21",
-          "lastPx": 96.02,
-          "impRate": 3.98,
-          "volume": 484,
-          "bp1d": -7.5,
-          "bp5d": -3.0,
-          "bp1m": 13.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.01,
+          "impRate": 3.99,
+          "volume": 242,
+          "bp1d": 1.0,
+          "bp5d": -7.5,
+          "bp1m": 18.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -11328,6 +11440,10 @@
             {
               "date": "2026-08-04",
               "close": 96.02
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.01
             }
           ]
         },
@@ -11339,13 +11455,13 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2029-06-20",
-          "lastPx": 96.015,
-          "impRate": 3.985,
-          "volume": 238,
-          "bp1d": -8.0,
-          "bp5d": -2.5,
-          "bp1m": 14.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 96.0,
+          "impRate": 4.0,
+          "volume": 259,
+          "bp1d": 1.5,
+          "bp5d": -6.5,
+          "bp1m": 19.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -11718,6 +11834,10 @@
             {
               "date": "2026-08-04",
               "close": 96.015
+            },
+            {
+              "date": "2026-08-05",
+              "close": 96.0
             }
           ]
         },
@@ -11729,13 +11849,13 @@
           "monthCode": "U",
           "month": 9,
           "settlementDate": "2029-09-19",
-          "lastPx": 96.0,
-          "impRate": 4.0,
-          "volume": 113,
-          "bp1d": -8.0,
-          "bp5d": -1.5,
-          "bp1m": 14.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.985,
+          "impRate": 4.015,
+          "volume": 228,
+          "bp1d": 1.5,
+          "bp5d": -6.0,
+          "bp1m": 19.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -12108,6 +12228,10 @@
             {
               "date": "2026-08-04",
               "close": 96.0
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.985
             }
           ]
         },
@@ -12119,13 +12243,13 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2029-12-19",
-          "lastPx": 95.985,
-          "impRate": 4.015,
-          "volume": 74,
-          "bp1d": -8.0,
-          "bp5d": -1.0,
-          "bp1m": 14.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.97,
+          "impRate": 4.03,
+          "volume": 146,
+          "bp1d": 1.5,
+          "bp5d": -5.5,
+          "bp1m": 19.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -12498,6 +12622,10 @@
             {
               "date": "2026-08-04",
               "close": 95.985
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.97
             }
           ]
         }
@@ -12514,13 +12642,13 @@
           "monthCode": "H",
           "month": 3,
           "settlementDate": "2030-03-20",
-          "lastPx": 95.965,
-          "impRate": 4.035,
-          "volume": 27,
-          "bp1d": -8.0,
-          "bp5d": -0.5,
-          "bp1m": 14.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.95,
+          "impRate": 4.05,
+          "volume": 149,
+          "bp1d": 1.5,
+          "bp5d": -5.0,
+          "bp1m": 19.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -12893,6 +13021,10 @@
             {
               "date": "2026-08-04",
               "close": 95.965
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.95
             }
           ]
         },
@@ -12904,13 +13036,13 @@
           "monthCode": "M",
           "month": 6,
           "settlementDate": "2030-06-19",
-          "lastPx": 95.935,
-          "impRate": 4.065,
-          "volume": 56,
-          "bp1d": -7.0,
-          "bp5d": 0.5,
-          "bp1m": 15.0,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.93,
+          "impRate": 4.07,
+          "volume": 68,
+          "bp1d": 0.5,
+          "bp5d": -5.5,
+          "bp1m": 18.5,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -13283,6 +13415,10 @@
             {
               "date": "2026-08-04",
               "close": 95.935
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.93
             }
           ]
         },
@@ -13296,11 +13432,11 @@
           "settlementDate": "2030-09-18",
           "lastPx": 95.905,
           "impRate": 4.095,
-          "volume": 27,
-          "bp1d": -7.0,
-          "bp5d": 1.5,
-          "bp1m": 15.0,
-          "lastDate": "2026-08-04",
+          "volume": 18,
+          "bp1d": -0.0,
+          "bp5d": -5.5,
+          "bp1m": 18.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -13673,6 +13809,10 @@
             {
               "date": "2026-08-04",
               "close": 95.905
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.905
             }
           ]
         },
@@ -13684,13 +13824,13 @@
           "monthCode": "Z",
           "month": 12,
           "settlementDate": "2030-12-18",
-          "lastPx": 95.875,
-          "impRate": 4.125,
-          "volume": 107,
-          "bp1d": -7.5,
-          "bp5d": 1.5,
-          "bp1m": 14.5,
-          "lastDate": "2026-08-04",
+          "lastPx": 95.87,
+          "impRate": 4.13,
+          "volume": 69,
+          "bp1d": 0.5,
+          "bp5d": -5.0,
+          "bp1m": 18.0,
+          "lastDate": "2026-08-05",
           "history": [
             {
               "date": "2026-03-27",
@@ -14063,12 +14203,16 @@
             {
               "date": "2026-08-04",
               "close": 95.875
+            },
+            {
+              "date": "2026-08-05",
+              "close": 95.87
             }
           ]
         }
       ]
     }
   ],
-  "timestamp": "2026-08-04T23:04:39.551297",
-  "historyDays": 93
+  "timestamp": "2026-08-05T23:01:11.307215",
+  "historyDays": 94
 }
