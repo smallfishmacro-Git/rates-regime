@@ -4,3 +4,4 @@ __pycache__/
 cookies.json
 inspect_request.py
 inspect_idb.py
+refresh_swaps.log
