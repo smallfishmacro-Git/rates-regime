@@ -129,6 +129,7 @@ def export_with_profile(profile_dir: str) -> dict | None:
             warm_up(page)
 
             state = ctx.storage_state()
+            state["user_agent"] = page.evaluate("navigator.userAgent")
 
             try:
                 fb_entries = page.evaluate(JS_READ_FIREBASE_DB)

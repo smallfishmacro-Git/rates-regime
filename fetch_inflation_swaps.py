@@ -47,8 +47,8 @@ COOKIES_ENV = "MARKET_RADAR_COOKIES"
 CAPTURE_TIMEOUT_LOCAL_S = 300
 
 CI_USER_AGENT = (
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 )
 
 
@@ -170,10 +170,24 @@ def fetch_ci(state_json: str) -> dict | None:
 
     headers = {
         "Authorization": f"Bearer {access_token}",
-        "User-Agent": CI_USER_AGENT,
+        "User-Agent": state.get("user_agent") or CI_USER_AGENT,
         "Referer": DASHBOARD_URL,
         "Accept": "application/json",
     }
+    cookies = state.get("cookies", [])
+    cookie_header = "; ".join(
+        f"{c['name']}={c['value']}"
+        for c in cookies
+        if c.get("name") and c.get("value") is not None
+    )
+    if cookie_header:
+        headers["Cookie"] = cookie_header
+        has_cf = any(c.get("name") == "cf_clearance" for c in cookies)
+        print(
+            f"  sending {len(cookies)} cookies "
+            f"(cf_clearance {'present' if has_cf else 'MISSING'})",
+            flush=True,
+        )
     params = {"provider": "US", "series": ",".join(SERIES), "years": 6}
     r = requests.get(API_URL, params=params, headers=headers, timeout=60)
     if r.status_code != 200:
