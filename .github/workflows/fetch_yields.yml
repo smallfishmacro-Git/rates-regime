@@ -23,7 +23,7 @@ jobs:
 
       - name: Fetch nominal yields
         env:
-          MARKET_RADAR_COOKIES: ${{ secrets.MARKET_RADAR_COOKIES }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: python fetch_nominal_yields.py
 
       - name: Commit and push if data updated
