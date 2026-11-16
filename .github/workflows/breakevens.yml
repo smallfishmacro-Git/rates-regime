@@ -1,0 +1,37 @@
+name: Fetch Breakevens
+
+on:
+  schedule:
+    - cron: '40 22 * * 1-5'  # 22:40 UTC Mon-Fri
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch breakevens (FRED T5YIE / T10YIE)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python fetch_breakevens.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/breakevens.csv
+          if git diff --cached --quiet; then echo "no data change"; exit 0; fi
+          git commit -m "data: breakevens $(date +%F)"
+          git pull --rebase origin main
+          git push
