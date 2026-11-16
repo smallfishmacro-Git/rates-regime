@@ -39,7 +39,7 @@ export default function Header({ onTabChange }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 10 }}>
           <span style={{ color: 'var(--dim)' }}>US</span>
-          <span style={{ color: 'var(--dim)' }}>NOM + REAL + INF SWAPS</span>
+          <span style={{ color: 'var(--dim)' }}>NOM + REAL + BREAKEVENS</span>
           <span style={{ color: 'var(--amber)' }}>{dateStr}</span>
           <span style={{ color: 'var(--dim)' }}>{timeStr}</span>
           <button

@@ -1,11 +1,12 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Reuse the two already-committed CSVs. real = nominal - inflation_swap, per tenor.
+// Reuse the two already-committed CSVs. real = nominal - breakeven, per tenor
+// (= the TIPS real yield). No 2Y TIPS breakeven exists, so 2Y stays null.
 const NOMINAL_URL =
   'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/nominal_yields.csv';
 const SWAPS_URL =
-  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/inflation_swaps.csv';
+  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/breakevens.csv';
 
 function parseCsv(text) {
   const lines = (text || '').trim().split(/\r?\n/);
@@ -50,7 +51,7 @@ export async function GET() {
     for (const r of swp.rows) {
       const d = (r.date || '').trim();
       if (!d) continue;
-      swpMap.set(d, { i2: num(r.US2YIS), i5: num(r.US5YIS), i10: num(r.US10YIS) });
+      swpMap.set(d, { i2: null, i5: num(r.US5YBE), i10: num(r.US10YBE) });
     }
 
     const dates = [...nomMap.keys()].filter((d) => swpMap.has(d)).sort();

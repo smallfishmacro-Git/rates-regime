@@ -10,7 +10,7 @@ import {
 const COLUMNS = [
   { id: 'nominal',   title: 'NOMINAL',         color: '#F59E0B', prefix: 'n' },
   { id: 'real',      title: 'REAL',            color: '#22D3EE', prefix: 'r' },
-  { id: 'inflation', title: 'INFLATION SWAPS', color: '#F97316', prefix: 'i' },
+  { id: 'inflation', title: 'BREAKEVENS',      color: '#F97316', prefix: 'i' },
 ];
 
 const TENORS = ['2Y', '5Y', '10Y', '30Y'];
@@ -95,7 +95,7 @@ export default function YieldCurve({ data }) {
 }
 
 function Column({ id, title, color, prefix, history, range, setRange, onExpand }) {
-  const [tenor,  setTenor]  = useState('2Y');
+  const [tenor,  setTenor]  = useState(prefix === 'n' ? '2Y' : '5Y'); // real/BE have no 2Y
   const [spread, setSpread] = useState('2s10s');
 
   const latest = history[history.length - 1];
@@ -393,7 +393,7 @@ function classifyRegime(history, prefix, idx) {
   if (idx < 20) return null;
   const cur  = history[idx];
   const past = history[idx - 20];
-  const k2  = `${prefix}2y`;
+  const k2  = prefix === 'n' ? `${prefix}2y` : `${prefix}5y`; // real/BE curves: 5s10s (no 2Y TIPS)
   const k10 = `${prefix}10y`;
   const c2  = cur?.[k2],  c10 = cur?.[k10];
   const p2  = past?.[k2], p10 = past?.[k10];

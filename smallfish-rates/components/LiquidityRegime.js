@@ -1,15 +1,15 @@
 'use client';
 import { useState, useMemo } from 'react';
 
-// Data: /api/liquidity -> joins data/nominal_yields.csv + data/inflation_swaps.csv.
-// Per date & tenor: infl = inflation swap, real = nominal - inflation swap.
+// Data: /api/liquidity -> joins data/nominal_yields.csv + data/breakevens.csv.
+// Per date & tenor: infl = TIPS breakeven, real = nominal - breakeven (= TIPS real yield).
 // Quadrant = signs of the 60-trading-day change in (real, infl).
 
 // ---- tunable constants ----
 const LOOKBACK = 60;       // trading days for the rolling change
 const WINDOW_YEARS = 5;    // history shown in scatter + ribbon
 const BP = 100;            // percent -> basis points
-const TENORS = ['2Y', '5Y', '10Y'];
+const TENORS = ['5Y', '10Y']; // no 2Y TIPS breakeven
 
 const Q = {
   FED_QE:    { name: 'FED QE / LIQUIDITY BID', sub: 'ΔRY ↓ · ΔBE ↑ · EASING + REFLATION',               color: '#00c853' },
@@ -219,7 +219,7 @@ export default function LiquidityRegime({ data, loading }) {
       {/* metrics strip */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
         <Metric label={`${tenor} REAL YIELD`}     value={fmtPct(lastReal)} deltaVal={cur.dReal} />
-        <Metric label={`${tenor} INFLATION SWAP`} value={fmtPct(lastInfl)} deltaVal={cur.dInfl} />
+        <Metric label={`${tenor} BREAKEVEN`} value={fmtPct(lastInfl)} deltaVal={cur.dInfl} />
         <div style={{ ...card, padding: '10px 12px', flex: 1 }}>
           <div style={{ fontSize: 9, color: 'var(--dim)', letterSpacing: 1, marginBottom: 4 }}>CURRENT QUADRANT</div>
           <div style={{ color: curQ.color, fontSize: 17, fontWeight: 'bold', lineHeight: 1.1 }}>{curQ.name}</div>

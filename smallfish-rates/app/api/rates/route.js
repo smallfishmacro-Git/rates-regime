@@ -9,8 +9,8 @@ const NO_CACHE_HEADERS = { 'Cache-Control': 'no-store, no-cache, must-revalidate
 
 const FRED_JSON_URL =
   'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/fred.json';
-const INFLATION_SWAPS_URL =
-  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/inflation_swaps.csv';
+const BREAKEVENS_URL =
+  'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/breakevens.csv';
 const NOMINAL_YIELDS_URL =
   'https://raw.githubusercontent.com/smallfishmacro-Git/rates-regime/main/data/nominal_yields.csv';
 
@@ -47,19 +47,19 @@ async function readFredJson() {
   }
 }
 
-const readInflationSwapsCsv = () => fetchCsv(INFLATION_SWAPS_URL, parseInflationSwapsCsv);
+const readBreakevensCsv = () => fetchCsv(BREAKEVENS_URL, parseBreakevensCsv);
 const readNominalYieldsCsv  = () => fetchCsv(NOMINAL_YIELDS_URL, parseNominalYieldsCsv);
 
-function parseInflationSwapsCsv(text) {
+// data/breakevens.csv: date,US5YBE,US10YBE (FRED T5YIE / T10YIE, TIPS-based).
+// No 2Y TIPS breakeven exists, so the 2Y inflation and real legs stay null.
+function parseBreakevensCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   const out = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',');
-    if (cols.length < 4) continue;
-    const [date, us2, us5, us10] = cols;
-    const r2 = parseFloat(us2), r5 = parseFloat(us5), r10 = parseFloat(us10);
-    if (isFinite(r2) && isFinite(r5) && isFinite(r10)) {
-      out.push({ date, us2yis: r2, us5yis: r5, us10yis: r10 });
+    const [date, be5, be10] = lines[i].split(',');
+    const b5 = parseFloat(be5), b10 = parseFloat(be10);
+    if (date && isFinite(b5) && isFinite(b10)) {
+      out.push({ date, be5: b5, be10: b10 });
     }
   }
   return out;
@@ -103,11 +103,11 @@ function buildYieldCurve(rateData, swaps, yields) {
       date: s.date,
       n1y: n1 ?? null,
       n2y: y.us2y, n5y: y.us5y, n10y: y.us10y, n30y: y.us30y,
-      i2y: s.us2yis, i5y: s.us5yis, i10y: s.us10yis,
+      i2y: null, i5y: s.be5, i10y: s.be10,
       i30y: (r30 != null) ? (y.us30y - r30) : null,
-      r2y: y.us2y - s.us2yis,
-      r5y: y.us5y - s.us5yis,
-      r10y: y.us10y - s.us10yis,
+      r2y: null,
+      r5y: y.us5y - s.be5,
+      r10y: y.us10y - s.be10,
       r30y: r30 ?? null,
     });
   }
@@ -131,7 +131,7 @@ function buildYieldCurve(rateData, swaps, yields) {
 export async function GET() {
   const [fred, swaps, yields] = await Promise.all([
     readFredJson(),
-    readInflationSwapsCsv(),
+    readBreakevensCsv(),
     readNominalYieldsCsv(),
   ]);
 
